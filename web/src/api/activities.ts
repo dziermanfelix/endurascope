@@ -18,3 +18,13 @@ export async function fetchActivityCount(): Promise<number> {
   const data = await response.json();
   return data.count;
 }
+
+export async function refetchActivitiesFromStrava(): Promise<{ success: boolean; fetched: number; total: number }> {
+  const response = await fetch(`${API_BASE_URL}/activities/refetch`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to refetch activities from Strava');
+  }
+  return response.json();
+}
