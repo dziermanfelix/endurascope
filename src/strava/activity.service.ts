@@ -90,5 +90,20 @@ export class ActivityService {
   async getActivityCount(): Promise<number> {
     return this.prisma.activity.count();
   }
+
+  async getAllActivities() {
+    const activities = await this.prisma.activity.findMany({
+      orderBy: {
+        startDate: 'desc',
+      },
+    });
+    
+    // Convert BigInt to string for JSON serialization
+    return activities.map((activity) => ({
+      ...activity,
+      stravaId: activity.stravaId.toString(),
+      uploadId: activity.uploadId ? activity.uploadId.toString() : null,
+    }));
+  }
 }
 

@@ -1,0 +1,33 @@
+export interface Activity {
+  id: string;
+  stravaId: bigint | string;
+  name: string | null;
+  distance: number | null;
+  movingTime: number | null;
+  elapsedTime: number | null;
+  totalElevationGain: number | null;
+  type: string | null;
+  startDate: string | null;
+  startDateLocal: string | null;
+  timezone: string | null;
+  utcOffset: number | null;
+  locationCity: string | null;
+  locationState: string | null;
+  locationCountry: string | null;
+  achievementCount: number | null;
+  kudosCount: number | null;
+  commentCount: number | null;
+  athleteCount: number | null;
+  photoCount: number | null;
+  trainer: boolean | null;
+  commute: boolean | null;
+  manual: boolean | null;
+  private: boolean | null;
+  flagged: boolean | null;
+  workoutType: number | null;
+  uploadId: bigint | string | null;
+  externalId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+

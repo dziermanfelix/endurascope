@@ -10,6 +10,8 @@ A proof of concept NestJS application for connecting to Strava and fetching acti
 npm install
 ```
 
+This will install all dependencies for both the backend and web frontend using npm workspaces. You only need to run this once from the root directory!
+
 ### 2. Strava API Setup
 
 To connect to Strava, you need to:
@@ -65,27 +67,51 @@ DATABASE_URL="postgresql://username:password@localhost:5432/endurascope?schema=p
 
 ### 5. Run the Application
 
+**Run both web and backend together:**
+
 ```bash
-npm run start:dev
+npm run dev
 ```
 
-The application will:
+This will start:
 
-1. Automatically open your browser for Strava authorization (if needed)
-2. Handle the OAuth callback and save tokens to the database
-3. Fetch your Strava activities
-4. Save activities to the database
-5. Print activities to the console
+- Backend API server on `http://localhost:3001`
+- Web development server on `http://localhost:5173`
 
-**First Run**: On your first run, if you don't have tokens in the database, the app will:
+**Or run them separately:**
 
-- Start a temporary web server on port 3000
-- Open your browser to authorize with Strava
-- Handle the callback automatically
-- Save tokens to the database
-- Then proceed to fetch, save, and display your activities
+```bash
+# Backend only
+npm run dev:api
 
-**Subsequent Runs**: Once you have tokens saved in the database, the app will use them directly without requiring browser authorization.
+# Web only (in a separate terminal)
+npm run web:dev
+```
+
+**Fetch activities from Strava:**
+
+```bash
+npm run fetch:activities
+```
+
+## Usage
+
+**Frontend (Web UI):**
+
+- Open `http://localhost:5173` in your browser
+- View all your Strava activities in a beautiful, responsive interface
+
+**Backend API:**
+
+- API is available at `http://localhost:3001/api`
+- Endpoints:
+  - `GET /api/activities` - Get all activities
+  - `GET /api/activities/count` - Get activity count
+
+**Fetch New Activities:**
+
+- Run `npm run fetch:activities` to fetch latest activities from Strava
+- Activities are automatically saved to the database
 
 ## Database Management
 
@@ -133,27 +159,33 @@ If you get an error about missing permissions, the app will automatically re-aut
 ## Project Structure
 
 ```
-src/
-├── main.ts                    # Application entry point
-├── app.module.ts              # Root module
-├── prisma/
-│   ├── prisma.module.ts       # Prisma module (global)
-│   └── prisma.service.ts      # Prisma service
-└── strava/
-    ├── strava.module.ts       # Strava module
-    ├── strava.service.ts      # Strava API service
-    ├── strava-oauth.service.ts # OAuth authorization service
-    └── activity.service.ts    # Activity database service
+├── web/                       # React + TypeScript web frontend
+│   ├── src/
+│   │   ├── App.tsx           # Main app component
+│   │   ├── components/       # React components
+│   │   ├── api/              # API client
+│   │   └── types/            # TypeScript types
+│   └── package.json
+└── src/                       # NestJS backend
+    ├── main.ts                # Application entry point
+    ├── app.module.ts          # Root module
+    ├── activities/            # Activities API module
+    ├── prisma/
+    │   ├── prisma.module.ts  # Prisma module (global)
+    │   └── prisma.service.ts # Prisma service
+    └── strava/
+        ├── strava.module.ts
+        ├── strava.service.ts
+        ├── strava-oauth.service.ts
+        └── activity.service.ts
 ```
 
 ## Features
 
-- ✅ Automatic OAuth authorization flow
-- ✅ Browser-based authentication (no manual token setup needed)
-- ✅ PostgreSQL database with Prisma ORM
-- ✅ Token storage in database (automatically refreshed)
-- ✅ Activity storage in database
-- ✅ Connect to Strava API
-- ✅ Authenticate using OAuth refresh tokens
-- ✅ Fetch athlete activities
-- ✅ Print activities to console with formatted details
+- ✅ **React + TypeScript Frontend** - Modern, responsive UI with Tailwind CSS
+- ✅ **NestJS Backend API** - RESTful API with TypeScript
+- ✅ **Automatic OAuth Flow** - Browser-based authentication (no manual token setup)
+- ✅ **PostgreSQL Database** - Persistent storage with Prisma ORM
+- ✅ **Token Management** - Automatic token refresh and storage
+- ✅ **Activity Display** - Beautiful activity cards with all details
+- ✅ **Real-time Data** - Fetch latest activities from Strava
