@@ -33,3 +33,4 @@ async function fetchActivities() {
 
 fetchActivities();
 
+

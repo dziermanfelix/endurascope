@@ -34,9 +34,16 @@ export function ActivityCard({ activity }: ActivityCardProps) {
       Swim: 'bg-cyan-500',
       Hike: 'bg-orange-500',
       Workout: 'bg-red-500',
+      Elliptical: 'bg-orange-500',
     };
     return colors[type || ''] || 'bg-gray-500';
   };
+
+  // Convert km to miles (1 km = 0.621371 miles)
+  const kmToMiles = (km: number): number => km * 0.621371;
+
+  // Convert meters to feet (1 meter = 3.28084 feet)
+  const metersToFeet = (meters: number): number => meters * 3.28084;
 
   const location = [activity.locationCity, activity.locationState, activity.locationCountry].filter(Boolean).join(', ');
 
@@ -45,7 +52,9 @@ export function ActivityCard({ activity }: ActivityCardProps) {
       {/* Header with type badge */}
       <div className='flex items-start justify-between mb-3'>
         {activity.type && (
-          <span className={`${getActivityTypeColor(activity.type)} text-white px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wide`}>
+          <span
+            className={`${getActivityTypeColor(activity.type)} text-white px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wide`}
+          >
             {activity.type}
           </span>
         )}
@@ -63,8 +72,8 @@ export function ActivityCard({ activity }: ActivityCardProps) {
       <div className='grid grid-cols-3 gap-3 mb-4 flex-grow'>
         {activity.distance !== null && (
           <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-900'>{activity.distance.toFixed(1)}</p>
-            <p className='text-xs text-gray-500 mt-0.5'>km</p>
+            <p className='text-2xl font-bold text-gray-900'>{kmToMiles(activity.distance).toFixed(1)}</p>
+            <p className='text-xs text-gray-500 mt-0.5'>mi</p>
           </div>
         )}
 
@@ -77,8 +86,8 @@ export function ActivityCard({ activity }: ActivityCardProps) {
 
         {activity.totalElevationGain !== null && activity.totalElevationGain > 0 ? (
           <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-900'>{Math.round(activity.totalElevationGain)}</p>
-            <p className='text-xs text-gray-500 mt-0.5'>m</p>
+            <p className='text-2xl font-bold text-gray-900'>{Math.round(metersToFeet(activity.totalElevationGain))}</p>
+            <p className='text-xs text-gray-500 mt-0.5'>ft</p>
           </div>
         ) : (
           <div className='text-center'>
@@ -106,8 +115,9 @@ export function ActivityCard({ activity }: ActivityCardProps) {
         ) : (
           <span className='text-gray-400'>No location</span>
         )}
-        
-        {(activity.kudosCount !== null && activity.kudosCount > 0) || (activity.commentCount !== null && activity.commentCount > 0) ? (
+
+        {(activity.kudosCount !== null && activity.kudosCount > 0) ||
+        (activity.commentCount !== null && activity.commentCount > 0) ? (
           <div className='flex items-center space-x-3 ml-3 flex-shrink-0'>
             {activity.kudosCount !== null && activity.kudosCount > 0 && (
               <span className='flex items-center'>
