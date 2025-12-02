@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import { createServer, Server } from 'http';
 import { parse } from 'url';
 import open from 'open';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 
 @Injectable()
 export class StravaOAuthService {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService,
+  ) {}
 
   async authorize(): Promise<string> {
     const clientId = this.configService.get<string>('STRAVA_CLIENT_ID');
@@ -66,13 +68,29 @@ export class StravaOAuthService {
               },
             );
 
+            const accessToken = tokenResponse.data.access_token;
             const refreshToken = tokenResponse.data.refresh_token;
+            const expiresAt = new Date(tokenResponse.data.expires_at * 1000);
+            const scope = tokenResponse.data.scope || null;
+            const athleteId = tokenResponse.data.athlete?.id?.toString() || null;
 
-            // Save refresh token to .env file
-            await this.saveRefreshToken(refreshToken);
-            
-            // Update config service with new token
-            process.env.STRAVA_REFRESH_TOKEN = refreshToken;
+            // Save tokens to database
+            await this.prisma.stravaToken.upsert({
+              where: { userId: athleteId },
+              create: {
+                userId: athleteId,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                expiresAt: expiresAt,
+                scope: scope,
+              },
+              update: {
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                expiresAt: expiresAt,
+                scope: scope,
+              },
+            });
 
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(
@@ -80,7 +98,7 @@ export class StravaOAuthService {
             );
 
             server.close();
-            console.log('✅ Authorization successful! Refresh token saved.\n');
+            console.log('✅ Authorization successful! Tokens saved to database.\n');
             resolve(refreshToken);
           } catch (error) {
             res.writeHead(500, { 'Content-Type': 'text/html' });
@@ -114,36 +132,6 @@ export class StravaOAuthService {
         reject(new Error('Authorization timeout. Please try again.'));
       }, 5 * 60 * 1000);
     });
-  }
-
-  private async saveRefreshToken(refreshToken: string): Promise<void> {
-    const envPath = path.join(process.cwd(), '.env');
-    let envContent = '';
-
-    try {
-      envContent = await fs.readFile(envPath, 'utf-8');
-    } catch (error) {
-      // .env file doesn't exist, we'll create it
-    }
-
-    // Update or add STRAVA_REFRESH_TOKEN
-    const lines = envContent.split('\n');
-    let found = false;
-
-    const updatedLines = lines.map((line) => {
-      if (line.startsWith('STRAVA_REFRESH_TOKEN=')) {
-        found = true;
-        return `STRAVA_REFRESH_TOKEN=${refreshToken}`;
-      }
-      return line;
-    });
-
-    if (!found) {
-      // Add refresh token at the end
-      updatedLines.push(`STRAVA_REFRESH_TOKEN=${refreshToken}`);
-    }
-
-    await fs.writeFile(envPath, updatedLines.join('\n'), 'utf-8');
   }
 }
 

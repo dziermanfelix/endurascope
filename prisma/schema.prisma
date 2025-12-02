@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model StravaToken {
+  id            String   @id @default(uuid())
+  userId        String?  @unique
+  accessToken   String
+  refreshToken  String
+  expiresAt     DateTime
+  tokenType     String   @default("Bearer")
+  scope         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("strava_tokens")
+}
+
+model Activity {
+  id                    String    @id @default(uuid())
+  stravaId              BigInt    @unique
+  name                  String?
+  distance              Float?    @default(0)
+  movingTime            Int?      @default(0)
+  elapsedTime           Int?      @default(0)
+  totalElevationGain    Float?    @default(0)
+  type                  String?
+  startDate             DateTime?
+  startDateLocal        DateTime?
+  timezone              String?
+  utcOffset             Int?
+  locationCity          String?
+  locationState         String?
+  locationCountry       String?
+  achievementCount      Int?      @default(0)
+  kudosCount            Int?      @default(0)
+  commentCount          Int?      @default(0)
+  athleteCount          Int?      @default(0)
+  photoCount            Int?      @default(0)
+  trainer               Boolean?  @default(false)
+  commute               Boolean?  @default(false)
+  manual                Boolean?  @default(false)
+  private               Boolean?  @default(false)
+  flagged               Boolean?  @default(false)
+  workoutType           Int?
+  uploadId              BigInt?
+  externalId            String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("activities")
+  @@index([stravaId])
+  @@index([startDate])
+  @@index([type])
+}
+

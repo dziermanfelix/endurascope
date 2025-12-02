@@ -1,5 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
 import axios, { AxiosInstance } from 'axios';
 import { StravaOAuthService } from './strava-oauth.service';
 
@@ -40,6 +41,7 @@ export class StravaService {
 
   constructor(
     private configService: ConfigService,
+    private prisma: PrismaService,
     @Optional() private oauthService?: StravaOAuthService
   ) {
     this.apiClient = axios.create({
@@ -50,7 +52,6 @@ export class StravaService {
   async initializeToken(): Promise<void> {
     const clientId = this.configService.get<string>('STRAVA_CLIENT_ID');
     const clientSecret = this.configService.get<string>('STRAVA_CLIENT_SECRET');
-    let refreshToken = this.configService.get<string>('STRAVA_REFRESH_TOKEN');
 
     if (!clientId || !clientSecret) {
       throw new Error(
@@ -58,33 +59,69 @@ export class StravaService {
       );
     }
 
-    // If no refresh token, automatically authorize
-    if (!refreshToken) {
+    // Try to get token from database
+    let tokenRecord = await this.prisma.stravaToken.findFirst();
+
+    // If no token in database, automatically authorize
+    if (!tokenRecord) {
       if (!this.oauthService) {
-        throw new Error(
-          'No refresh token found and OAuth service not available. Please set STRAVA_REFRESH_TOKEN or ensure OAuth service is configured.'
-        );
+        throw new Error('No token found in database and OAuth service not available. Please authorize first.');
       }
-      console.log('No refresh token found. Starting OAuth authorization...\n');
-      refreshToken = await this.oauthService.authorize();
-      // Get the refresh token from environment (it was just saved)
-      refreshToken = process.env.STRAVA_REFRESH_TOKEN || refreshToken;
+      console.log('No token found in database. Starting OAuth authorization...\n');
+      await this.oauthService.authorize();
+      // Try to get token again after authorization
+      tokenRecord = await this.prisma.stravaToken.findFirst();
     }
 
-    try {
-      const response = await axios.post('https://www.strava.com/oauth/token', {
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-      });
-
-      this.accessToken = response.data.access_token;
-      this.apiClient.defaults.headers.common['Authorization'] = `Bearer ${this.accessToken}`;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to refresh Strava token: ${errorMessage}`);
+    if (!tokenRecord) {
+      throw new Error('Failed to get token after authorization. Please try again.');
     }
+
+    // Check if token is expired or about to expire (within 5 minutes)
+    const now = new Date();
+    const expiresAt = new Date(tokenRecord.expiresAt);
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+
+    let refreshToken = tokenRecord.refreshToken;
+    let shouldRefresh = expiresAt <= fiveMinutesFromNow;
+
+    // Refresh token if expired or about to expire
+    if (shouldRefresh) {
+      try {
+        const response = await axios.post('https://www.strava.com/oauth/token', {
+          client_id: clientId,
+          client_secret: clientSecret,
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+        });
+
+        const newAccessToken = response.data.access_token;
+        const newRefreshToken = response.data.refresh_token;
+        const newExpiresAt = new Date(response.data.expires_at * 1000);
+        const scope = response.data.scope || null;
+
+        // Update token in database
+        await this.prisma.stravaToken.update({
+          where: { id: tokenRecord.id },
+          data: {
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+            expiresAt: newExpiresAt,
+            scope: scope,
+          },
+        });
+
+        this.accessToken = newAccessToken;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Failed to refresh Strava token: ${errorMessage}`);
+      }
+    } else {
+      // Use existing access token
+      this.accessToken = tokenRecord.accessToken;
+    }
+
+    this.apiClient.defaults.headers.common['Authorization'] = `Bearer ${this.accessToken}`;
   }
 
   async fetchActivities(page: number = 1, perPage: number = 30): Promise<StravaActivity[]> {
