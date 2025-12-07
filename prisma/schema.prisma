@@ -32,6 +32,9 @@ model Activity {
   movingTime            Int?      @default(0)
   elapsedTime           Int?      @default(0)
   totalElevationGain    Float?    @default(0)
+  averageHeartrate      Int?
+  calories              Int?
+  averageSpeed          Float?
   type                  String?
   startDate             DateTime?
   startDateLocal        DateTime?

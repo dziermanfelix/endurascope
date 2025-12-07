@@ -6,6 +6,9 @@ export interface Activity {
   movingTime: number | null;
   elapsedTime: number | null;
   totalElevationGain: number | null;
+  averageHeartrate: number | null;
+  calories: number | null;
+  averageSpeed: number | null;
   type: string | null;
   startDate: string | null;
   startDateLocal: string | null;
@@ -30,4 +33,3 @@ export interface Activity {
   createdAt: string;
   updatedAt: string;
 }
-

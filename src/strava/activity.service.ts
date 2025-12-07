@@ -16,19 +16,24 @@ export class ActivityService {
 
     for (const activity of activities) {
       try {
-        // If activity type is "Workout", try to get the actual sport_type from detailed endpoint
+        // Fetch detailed activity info to get calories, heart rate, and other detailed fields
+        // The list endpoint doesn't include these fields
+        let detailedActivity: StravaActivity | null = null;
         let activityType = activity.type || null;
-        if (activityType === 'Workout') {
-          try {
-            const detailedActivity = await this.stravaService.getActivityById(activity.id);
-            // Use sport_type if available and different from "Workout"
-            if (detailedActivity.sport_type && detailedActivity.sport_type !== 'Workout') {
-              activityType = detailedActivity.sport_type;
-            }
-          } catch (error) {
-            // If fetching detailed info fails, just use the original type
-            console.warn(`Failed to fetch detailed info for activity ${activity.id}, using type: ${activityType}`);
+
+        try {
+          detailedActivity = await this.stravaService.getActivityById(activity.id);
+          // Use sport_type if available and different from "Workout"
+          if (detailedActivity.sport_type && detailedActivity.sport_type !== 'Workout') {
+            activityType = detailedActivity.sport_type;
           }
+          // Use detailed activity data for calories, heart rate, and speed
+          activity.average_heartrate = detailedActivity.average_heartrate ?? activity.average_heartrate;
+          activity.calories = detailedActivity.calories ?? activity.calories;
+          activity.average_speed = detailedActivity.average_speed ?? activity.average_speed;
+        } catch (error) {
+          // If fetching detailed info fails, just use the original activity data
+          console.warn(`Failed to fetch detailed info for activity ${activity.id}, using summary data only`);
         }
 
         await this.prisma.activity.upsert({
@@ -40,6 +45,9 @@ export class ActivityService {
             movingTime: activity.moving_time || null,
             elapsedTime: activity.elapsed_time || null,
             totalElevationGain: activity.total_elevation_gain || null,
+            averageHeartrate: activity.average_heartrate || null,
+            calories: activity.calories || null,
+            averageSpeed: activity.average_speed || null,
             type: activityType,
             startDate: activity.start_date ? new Date(activity.start_date) : null,
             startDateLocal: activity.start_date_local ? new Date(activity.start_date_local) : null,
@@ -68,6 +76,9 @@ export class ActivityService {
             movingTime: activity.moving_time || null,
             elapsedTime: activity.elapsed_time || null,
             totalElevationGain: activity.total_elevation_gain || null,
+            averageHeartrate: activity.average_heartrate || null,
+            calories: activity.calories || null,
+            averageSpeed: activity.average_speed || null,
             type: activityType,
             startDate: activity.start_date ? new Date(activity.start_date) : null,
             startDateLocal: activity.start_date_local ? new Date(activity.start_date_local) : null,

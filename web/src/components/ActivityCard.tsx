@@ -15,15 +15,10 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
     if (!seconds) return 'N/A';
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
 
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    } else if (minutes > 0) {
-      return `${minutes}m`;
-    } else {
-      return `${secs}s`;
-    }
+    // Format as HH:MM:SS with zero-padding
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const formatDate = (dateString: string | null): string => {
@@ -45,10 +40,17 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
     return colors[type || ''] || 'bg-gray-500';
   };
 
-  // Convert meters to feet (1 meter = 3.28084 feet)
-  const metersToFeet = (meters: number): number => meters * 3.28084;
+  // Calculate pace in minutes:seconds per mile
+  const calculatePace = (distanceMiles: number | null, timeSeconds: number | null): string | null => {
+    if (!distanceMiles || !timeSeconds || distanceMiles === 0) return null;
+    const secondsPerMile = timeSeconds / distanceMiles;
+    const minutes = Math.floor(secondsPerMile / 60);
+    const seconds = Math.floor(secondsPerMile % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   const location = [activity.locationCity, activity.locationState, activity.locationCountry].filter(Boolean).join(', ');
+  const pace = calculatePace(activity.distance, activity.movingTime);
 
   const handleNameClick = () => {
     setIsEditing(true);
@@ -151,15 +153,39 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
           </div>
         )}
 
-        {activity.totalElevationGain !== null && activity.totalElevationGain > 0 ? (
+        {pace !== null ? (
           <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-900'>{Math.round(metersToFeet(activity.totalElevationGain))}</p>
-            <p className='text-xs text-gray-500 mt-0.5'>ft</p>
+            <p className='text-2xl font-bold text-gray-900'>{pace}</p>
+            <p className='text-xs text-gray-500 mt-0.5'>pace</p>
           </div>
         ) : (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-400'>—</p>
-            <p className='text-xs text-gray-400 mt-0.5'>elev</p>
+            <p className='text-xs text-gray-400 mt-0.5'>pace</p>
+          </div>
+        )}
+
+        {activity.averageHeartrate !== null && activity.averageHeartrate > 0 ? (
+          <div className='text-center'>
+            <p className='text-2xl font-bold text-gray-900'>{activity.averageHeartrate}</p>
+            <p className='text-xs text-gray-500 mt-0.5'>bpm</p>
+          </div>
+        ) : (
+          <div className='text-center'>
+            <p className='text-2xl font-bold text-gray-400'>—</p>
+            <p className='text-xs text-gray-400 mt-0.5'>hr</p>
+          </div>
+        )}
+
+        {activity.calories !== null && activity.calories > 0 ? (
+          <div className='text-center'>
+            <p className='text-2xl font-bold text-gray-900'>{activity.calories}</p>
+            <p className='text-xs text-gray-500 mt-0.5'>cal</p>
+          </div>
+        ) : (
+          <div className='text-center'>
+            <p className='text-2xl font-bold text-gray-400'>—</p>
+            <p className='text-xs text-gray-400 mt-0.5'>cal</p>
           </div>
         )}
       </div>

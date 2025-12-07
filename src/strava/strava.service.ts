@@ -11,6 +11,9 @@ export interface StravaActivity {
   moving_time: number;
   elapsed_time: number;
   total_elevation_gain: number;
+  average_heartrate?: number | null;
+  calories?: number | null;
+  average_speed?: number | null;
   type: string;
   sport_type?: string; // More specific type from detailed activity endpoint
   start_date: string;
@@ -102,7 +105,7 @@ export class StravaService {
         const newAccessToken = response.data.access_token;
         const newRefreshToken = response.data.refresh_token;
         const newExpiresAt = new Date(response.data.expires_at * 1000);
-        
+
         // Handle scope - it might be a string or array
         let scope: string | null = null;
         if (response.data.scope) {
@@ -230,15 +233,14 @@ export class StravaService {
 
     // Check scope if available (Strava might not return scope in token response)
     if (tokenRecord.scope) {
-      const scopes = tokenRecord.scope.split(',').map(s => s.trim());
-      const hasWriteScope = scopes.some(scope => 
-        scope === 'activity:write' || scope.includes('activity:write')
-      );
-      
+      const scopes = tokenRecord.scope.split(',').map((s) => s.trim());
+      const hasWriteScope = scopes.some((scope) => scope === 'activity:write' || scope.includes('activity:write'));
+
       if (!hasWriteScope) {
         throw new Error(
-          'Token missing activity:write scope. Current scopes: ' + (scopes.join(', ') || 'none') + 
-          '. Please re-authorize your application to grant write permissions.'
+          'Token missing activity:write scope. Current scopes: ' +
+            (scopes.join(', ') || 'none') +
+            '. Please re-authorize your application to grant write permissions.'
         );
       }
     }
@@ -251,39 +253,43 @@ export class StravaService {
         // Check if it's a scope/permission issue
         const errorData = error.response?.data;
         const errorMessage = errorData?.message || '';
-        
-        if (errorMessage.includes('write') || 
-            errorMessage.includes('permission') || 
-            errorMessage.includes('scope') ||
-            errorMessage.includes('unauthorized')) {
+
+        if (
+          errorMessage.includes('write') ||
+          errorMessage.includes('permission') ||
+          errorMessage.includes('scope') ||
+          errorMessage.includes('unauthorized')
+        ) {
           throw new Error(
             'Token missing activity:write scope. Please re-authorize your application to grant write permissions. ' +
-            `Strava error: ${errorMessage}`
+              `Strava error: ${errorMessage}`
           );
         }
-        
+
         // Token expired, refresh and retry (but only if it's not a scope issue)
         await this.initializeToken();
-        
+
         // Update the axios headers with the new token
         this.apiClient.defaults.headers.common['Authorization'] = `Bearer ${this.accessToken}`;
-        
+
         // Check scope again after refresh
         const refreshedTokenRecord = await this.prisma.stravaToken.findFirst();
         if (refreshedTokenRecord) {
-          const refreshedScopes = refreshedTokenRecord.scope ? refreshedTokenRecord.scope.split(',').map(s => s.trim()) : [];
-          const hasWriteScope = refreshedScopes.some(scope => 
-            scope === 'activity:write' || scope.includes('activity:write')
+          const refreshedScopes = refreshedTokenRecord.scope
+            ? refreshedTokenRecord.scope.split(',').map((s) => s.trim())
+            : [];
+          const hasWriteScope = refreshedScopes.some(
+            (scope) => scope === 'activity:write' || scope.includes('activity:write')
           );
-          
+
           if (!hasWriteScope) {
             throw new Error(
               'Refreshed token still missing activity:write scope. Please re-authorize your application. ' +
-              'Note: Refreshing a token does not add new scopes - you must re-authorize.'
+                'Note: Refreshing a token does not add new scopes - you must re-authorize.'
             );
           }
         }
-        
+
         try {
           const retryResponse = await this.apiClient.put(`/activities/${activityId}`, updates);
           return retryResponse.data;
@@ -292,13 +298,13 @@ export class StravaService {
           if (retryError.response?.status === 401) {
             throw new Error(
               'Token still unauthorized after refresh. This indicates missing activity:write scope. ' +
-              'Please re-authorize your application to grant write permissions.'
+                'Please re-authorize your application to grant write permissions.'
             );
           }
           throw retryError;
         }
       }
-      
+
       const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
       throw new Error(`Failed to update activity: ${errorMessage}`);
     }
