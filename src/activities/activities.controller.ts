@@ -48,10 +48,7 @@ export class ActivitiesController {
   }
 
   @Put(':stravaId')
-  async updateActivity(
-    @Param('stravaId') stravaId: string,
-    @Body() updates: { name?: string }
-  ) {
+  async updateActivity(@Param('stravaId') stravaId: string, @Body() updates: { name?: string }) {
     try {
       // Validate input
       if (!updates.name || updates.name.trim().length === 0) {
@@ -110,10 +107,7 @@ export class ActivitiesController {
         throw error;
       }
       this.logger.error(`Unexpected error updating activity: ${error.message}`, error.stack);
-      throw new HttpException(
-        `Failed to update activity: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      throw new HttpException(`Failed to update activity: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

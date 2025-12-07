@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { StravaActivity } from './strava.service';
+import { StravaActivity, StravaService } from './strava.service';
 
 @Injectable()
 export class ActivityService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private stravaService: StravaService
+  ) {}
 
   async saveActivities(activities: StravaActivity[]): Promise<void> {
     if (activities.length === 0) {
@@ -13,6 +16,21 @@ export class ActivityService {
 
     for (const activity of activities) {
       try {
+        // If activity type is "Workout", try to get the actual sport_type from detailed endpoint
+        let activityType = activity.type || null;
+        if (activityType === 'Workout') {
+          try {
+            const detailedActivity = await this.stravaService.getActivityById(activity.id);
+            // Use sport_type if available and different from "Workout"
+            if (detailedActivity.sport_type && detailedActivity.sport_type !== 'Workout') {
+              activityType = detailedActivity.sport_type;
+            }
+          } catch (error) {
+            // If fetching detailed info fails, just use the original type
+            console.warn(`Failed to fetch detailed info for activity ${activity.id}, using type: ${activityType}`);
+          }
+        }
+
         await this.prisma.activity.upsert({
           where: { stravaId: BigInt(activity.id) },
           create: {
@@ -22,11 +40,9 @@ export class ActivityService {
             movingTime: activity.moving_time || null,
             elapsedTime: activity.elapsed_time || null,
             totalElevationGain: activity.total_elevation_gain || null,
-            type: activity.type || null,
+            type: activityType,
             startDate: activity.start_date ? new Date(activity.start_date) : null,
-            startDateLocal: activity.start_date_local
-              ? new Date(activity.start_date_local)
-              : null,
+            startDateLocal: activity.start_date_local ? new Date(activity.start_date_local) : null,
             timezone: activity.timezone || null,
             utcOffset: activity.utc_offset || null,
             locationCity: activity.location_city || null,
@@ -52,11 +68,9 @@ export class ActivityService {
             movingTime: activity.moving_time || null,
             elapsedTime: activity.elapsed_time || null,
             totalElevationGain: activity.total_elevation_gain || null,
-            type: activity.type || null,
+            type: activityType,
             startDate: activity.start_date ? new Date(activity.start_date) : null,
-            startDateLocal: activity.start_date_local
-              ? new Date(activity.start_date_local)
-              : null,
+            startDateLocal: activity.start_date_local ? new Date(activity.start_date_local) : null,
             timezone: activity.timezone || null,
             utcOffset: activity.utc_offset || null,
             locationCity: activity.location_city || null,
@@ -93,7 +107,7 @@ export class ActivityService {
         startDate: 'desc',
       },
     });
-    
+
     // Convert BigInt to string for JSON serialization
     return activities.map((activity) => ({
       ...activity,
@@ -104,7 +118,7 @@ export class ActivityService {
 
   async updateActivity(stravaId: string, updates: { name?: string }): Promise<void> {
     const stravaIdBigInt = BigInt(stravaId);
-    
+
     try {
       await this.prisma.activity.update({
         where: { stravaId: stravaIdBigInt },
@@ -121,4 +135,3 @@ export class ActivityService {
     }
   }
 }
-

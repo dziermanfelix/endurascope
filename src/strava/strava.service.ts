@@ -12,6 +12,7 @@ export interface StravaActivity {
   elapsed_time: number;
   total_elevation_gain: number;
   type: string;
+  sport_type?: string; // More specific type from detailed activity endpoint
   start_date: string;
   start_date_local: string;
   timezone: string;
@@ -194,6 +195,26 @@ export class StravaService {
   async printActivities(): Promise<void> {
     const activities = await this.fetchActivities();
     // This method is kept for backward compatibility but logging is removed
+  }
+
+  async getActivityById(activityId: number): Promise<StravaActivity> {
+    if (!this.accessToken) {
+      await this.initializeToken();
+    }
+
+    try {
+      const response = await this.apiClient.get(`/activities/${activityId}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        // Token expired, refresh and retry
+        await this.initializeToken();
+        const retryResponse = await this.apiClient.get(`/activities/${activityId}`);
+        return retryResponse.data;
+      }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to fetch activity ${activityId}: ${errorMessage}`);
+    }
   }
 
   async updateActivity(activityId: number, updates: { name?: string }): Promise<StravaActivity> {
