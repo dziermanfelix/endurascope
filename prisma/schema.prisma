@@ -32,30 +32,12 @@ model Activity {
   movingTime            Int?      @default(0)
   elapsedTime           Int?      @default(0)
   totalElevationGain    Float?    @default(0)
-  averageHeartrate      Int?
+  averageHeartRate      Int?
   calories              Int?
   averageSpeed          Float?
   type                  String?
   startDate             DateTime?
   startDateLocal        DateTime?
-  timezone              String?
-  utcOffset             Int?
-  locationCity          String?
-  locationState         String?
-  locationCountry       String?
-  achievementCount      Int?      @default(0)
-  kudosCount            Int?      @default(0)
-  commentCount          Int?      @default(0)
-  athleteCount          Int?      @default(0)
-  photoCount            Int?      @default(0)
-  trainer               Boolean?  @default(false)
-  commute               Boolean?  @default(false)
-  manual                Boolean?  @default(false)
-  private               Boolean?  @default(false)
-  flagged               Boolean?  @default(false)
-  workoutType           Int?
-  uploadId              BigInt?
-  externalId            String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 

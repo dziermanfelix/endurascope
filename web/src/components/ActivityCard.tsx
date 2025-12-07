@@ -49,7 +49,6 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const location = [activity.locationCity, activity.locationState, activity.locationCountry].filter(Boolean).join(', ');
   const pace = calculatePace(activity.distance, activity.movingTime);
 
   const handleNameClick = () => {
@@ -165,9 +164,9 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
           </div>
         )}
 
-        {activity.averageHeartrate !== null && activity.averageHeartrate > 0 ? (
+        {activity.averageHeartRate !== null && activity.averageHeartRate > 0 ? (
           <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-900'>{activity.averageHeartrate}</p>
+            <p className='text-2xl font-bold text-gray-900'>{activity.averageHeartRate}</p>
             <p className='text-xs text-gray-500 mt-0.5'>bpm</p>
           </div>
         ) : (
@@ -190,52 +189,6 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
         )}
       </div>
 
-      {/* Footer with location and social stats */}
-      <div className='pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-600'>
-        {location ? (
-          <span className='flex items-center truncate flex-1 min-w-0'>
-            <svg className='w-3.5 h-3.5 mr-1.5 flex-shrink-0' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'
-              />
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 11a3 3 0 11-6 0 3 3 0 016 0z' />
-            </svg>
-            <span className='truncate'>{location}</span>
-          </span>
-        ) : (
-          <span className='text-gray-400'>No location</span>
-        )}
-
-        {(activity.kudosCount !== null && activity.kudosCount > 0) ||
-        (activity.commentCount !== null && activity.commentCount > 0) ? (
-          <div className='flex items-center space-x-3 ml-3 flex-shrink-0'>
-            {activity.kudosCount !== null && activity.kudosCount > 0 && (
-              <span className='flex items-center'>
-                <svg className='w-3.5 h-3.5 mr-1' fill='currentColor' viewBox='0 0 20 20'>
-                  <path d='M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.834a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z' />
-                </svg>
-                {activity.kudosCount}
-              </span>
-            )}
-            {activity.commentCount !== null && activity.commentCount > 0 && (
-              <span className='flex items-center'>
-                <svg className='w-3.5 h-3.5 mr-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'
-                  />
-                </svg>
-                {activity.commentCount}
-              </span>
-            )}
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 }
