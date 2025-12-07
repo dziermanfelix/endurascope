@@ -28,3 +28,17 @@ export async function refetchActivitiesFromStrava(): Promise<{ success: boolean;
   }
   return response.json();
 }
+
+export async function updateActivityName(stravaId: string, name: string): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/activities/${stravaId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update activity name');
+  }
+  return response.json();
+}

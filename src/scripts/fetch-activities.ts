@@ -10,22 +10,12 @@ async function fetchActivities() {
   const stravaService = app.get(StravaService);
   const activityService = app.get(ActivityService);
 
-  // Fetch activities
-  console.log('Fetching activities from Strava...\n');
   const activities = await stravaService.fetchActivities();
 
-  if (activities.length === 0) {
-    console.log('No activities found.');
-  } else {
-    // Save activities to database
+  if (activities.length > 0) {
     await activityService.saveActivities(activities);
-
-    // Print activities to console
-    await stravaService.printActivities();
-
-    // Show database stats
     const count = await activityService.getActivityCount();
-    console.log(`\n📊 Total activities in database: ${count}`);
+    console.log(`Total activities in database: ${count}`);
   }
 
   await app.close();

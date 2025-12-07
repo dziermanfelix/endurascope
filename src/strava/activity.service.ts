@@ -11,8 +11,6 @@ export class ActivityService {
       return;
     }
 
-    console.log(`\n💾 Saving ${activities.length} activities to database...`);
-
     for (const activity of activities) {
       try {
         await this.prisma.activity.upsert({
@@ -83,8 +81,6 @@ export class ActivityService {
         console.error(`Failed to save activity ${activity.id}:`, error);
       }
     }
-
-    console.log('✅ Activities saved successfully!\n');
   }
 
   async getActivityCount(): Promise<number> {
@@ -104,6 +100,25 @@ export class ActivityService {
       stravaId: activity.stravaId.toString(),
       uploadId: activity.uploadId ? activity.uploadId.toString() : null,
     }));
+  }
+
+  async updateActivity(stravaId: string, updates: { name?: string }): Promise<void> {
+    const stravaIdBigInt = BigInt(stravaId);
+    
+    try {
+      await this.prisma.activity.update({
+        where: { stravaId: stravaIdBigInt },
+        data: {
+          ...(updates.name !== undefined && { name: updates.name }),
+        },
+      });
+    } catch (error: any) {
+      // If activity doesn't exist, that's okay - we'll sync it from Strava
+      if (error.code === 'P2025') {
+        return;
+      }
+      throw error;
+    }
   }
 }
 

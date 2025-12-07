@@ -24,10 +24,8 @@ export class StravaOAuthService {
     }
 
     const redirectUri = 'http://localhost:3000/callback';
-    const authUrl = `http://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&approval_prompt=force&scope=activity:read_all`;
+    const authUrl = `http://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&approval_prompt=force&scope=activity:read_all,activity:write`;
 
-    console.log('\n📱 Starting OAuth authorization flow...');
-    console.log('Opening browser for authorization...\n');
 
     return new Promise((resolve, reject) => {
       const server: Server = createServer(async (req, res) => {
@@ -71,7 +69,17 @@ export class StravaOAuthService {
             const accessToken = tokenResponse.data.access_token;
             const refreshToken = tokenResponse.data.refresh_token;
             const expiresAt = new Date(tokenResponse.data.expires_at * 1000);
-            const scope = tokenResponse.data.scope || null;
+            
+            // Handle scope - it might be a string or array
+            let scope: string | null = null;
+            if (tokenResponse.data.scope) {
+              if (Array.isArray(tokenResponse.data.scope)) {
+                scope = tokenResponse.data.scope.join(',');
+              } else {
+                scope = tokenResponse.data.scope;
+              }
+            }
+            
             const athleteId = tokenResponse.data.athlete?.id?.toString() || null;
 
             // Save tokens to database
@@ -98,7 +106,6 @@ export class StravaOAuthService {
             );
 
             server.close();
-            console.log('✅ Authorization successful! Tokens saved to database.\n');
             resolve(refreshToken);
           } catch (error) {
             res.writeHead(500, { 'Content-Type': 'text/html' });

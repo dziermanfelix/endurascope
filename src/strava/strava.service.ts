@@ -49,6 +49,10 @@ export class StravaService {
     });
   }
 
+  async getTokenStatus() {
+    return await this.prisma.stravaToken.findFirst();
+  }
+
   async initializeToken(): Promise<void> {
     const clientId = this.configService.get<string>('STRAVA_CLIENT_ID');
     const clientSecret = this.configService.get<string>('STRAVA_CLIENT_SECRET');
@@ -67,7 +71,6 @@ export class StravaService {
       if (!this.oauthService) {
         throw new Error('No token found in database and OAuth service not available. Please authorize first.');
       }
-      console.log('No token found in database. Starting OAuth authorization...\n');
       await this.oauthService.authorize();
       // Try to get token again after authorization
       tokenRecord = await this.prisma.stravaToken.findFirst();
@@ -98,7 +101,16 @@ export class StravaService {
         const newAccessToken = response.data.access_token;
         const newRefreshToken = response.data.refresh_token;
         const newExpiresAt = new Date(response.data.expires_at * 1000);
-        const scope = response.data.scope || null;
+        
+        // Handle scope - it might be a string or array
+        let scope: string | null = null;
+        if (response.data.scope) {
+          if (Array.isArray(response.data.scope)) {
+            scope = response.data.scope.join(',');
+          } else {
+            scope = response.data.scope;
+          }
+        }
 
         // Update token in database
         await this.prisma.stravaToken.update({
@@ -152,7 +164,6 @@ export class StravaService {
               'Token missing required permissions. Please re-authorize your application with the scope activity:read_all.'
             );
           }
-          console.log('Token missing required permissions. Re-authorizing...\n');
           await this.oauthService.authorize();
           // Retry with new token
           await this.initializeToken();
@@ -181,37 +192,95 @@ export class StravaService {
   }
 
   async printActivities(): Promise<void> {
-    console.log('Fetching activities from Strava...\n');
     const activities = await this.fetchActivities();
+    // This method is kept for backward compatibility but logging is removed
+  }
 
-    if (activities.length === 0) {
-      console.log('No activities found.');
-      return;
+  async updateActivity(activityId: number, updates: { name?: string }): Promise<StravaActivity> {
+    if (!this.accessToken) {
+      await this.initializeToken();
     }
 
-    console.log(`Found ${activities.length} activities:\n`);
-    console.log('='.repeat(80));
+    // Check if token exists
+    const tokenRecord = await this.prisma.stravaToken.findFirst();
+    if (!tokenRecord) {
+      throw new Error('No token found. Please authorize your application first.');
+    }
 
-    activities.forEach((activity, index) => {
-      console.log(`\nActivity ${index + 1}:`);
-      console.log(`  Name: ${activity.name}`);
-      console.log(`  Type: ${activity.type}`);
-      console.log(`  Distance: ${(activity.distance / 1000).toFixed(2)} km`);
-      console.log(`  Moving Time: ${this.formatTime(activity.moving_time)}`);
-      console.log(`  Elapsed Time: ${this.formatTime(activity.elapsed_time)}`);
-      console.log(`  Elevation Gain: ${activity.total_elevation_gain} m`);
-      console.log(`  Start Date: ${new Date(activity.start_date_local).toLocaleString()}`);
-      console.log(`  Kudos: ${activity.kudos_count}`);
-      console.log(`  Comments: ${activity.comment_count}`);
-      if (activity.location_city || activity.location_state || activity.location_country) {
-        const location = [activity.location_city, activity.location_state, activity.location_country]
-          .filter(Boolean)
-          .join(', ');
-        console.log(`  Location: ${location}`);
+    // Check scope if available (Strava might not return scope in token response)
+    if (tokenRecord.scope) {
+      const scopes = tokenRecord.scope.split(',').map(s => s.trim());
+      const hasWriteScope = scopes.some(scope => 
+        scope === 'activity:write' || scope.includes('activity:write')
+      );
+      
+      if (!hasWriteScope) {
+        throw new Error(
+          'Token missing activity:write scope. Current scopes: ' + (scopes.join(', ') || 'none') + 
+          '. Please re-authorize your application to grant write permissions.'
+        );
       }
-    });
+    }
 
-    console.log('\n' + '='.repeat(80));
+    try {
+      const response = await this.apiClient.put(`/activities/${activityId}`, updates);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        // Check if it's a scope/permission issue
+        const errorData = error.response?.data;
+        const errorMessage = errorData?.message || '';
+        
+        if (errorMessage.includes('write') || 
+            errorMessage.includes('permission') || 
+            errorMessage.includes('scope') ||
+            errorMessage.includes('unauthorized')) {
+          throw new Error(
+            'Token missing activity:write scope. Please re-authorize your application to grant write permissions. ' +
+            `Strava error: ${errorMessage}`
+          );
+        }
+        
+        // Token expired, refresh and retry (but only if it's not a scope issue)
+        await this.initializeToken();
+        
+        // Update the axios headers with the new token
+        this.apiClient.defaults.headers.common['Authorization'] = `Bearer ${this.accessToken}`;
+        
+        // Check scope again after refresh
+        const refreshedTokenRecord = await this.prisma.stravaToken.findFirst();
+        if (refreshedTokenRecord) {
+          const refreshedScopes = refreshedTokenRecord.scope ? refreshedTokenRecord.scope.split(',').map(s => s.trim()) : [];
+          const hasWriteScope = refreshedScopes.some(scope => 
+            scope === 'activity:write' || scope.includes('activity:write')
+          );
+          
+          if (!hasWriteScope) {
+            throw new Error(
+              'Refreshed token still missing activity:write scope. Please re-authorize your application. ' +
+              'Note: Refreshing a token does not add new scopes - you must re-authorize.'
+            );
+          }
+        }
+        
+        try {
+          const retryResponse = await this.apiClient.put(`/activities/${activityId}`, updates);
+          return retryResponse.data;
+        } catch (retryError: any) {
+          // If retry also fails with 401, it's definitely a scope issue
+          if (retryError.response?.status === 401) {
+            throw new Error(
+              'Token still unauthorized after refresh. This indicates missing activity:write scope. ' +
+              'Please re-authorize your application to grant write permissions.'
+            );
+          }
+          throw retryError;
+        }
+      }
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      throw new Error(`Failed to update activity: ${errorMessage}`);
+    }
   }
 
   private formatTime(seconds: number): string {
