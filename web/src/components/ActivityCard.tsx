@@ -45,9 +45,6 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
     return colors[type || ''] || 'bg-gray-500';
   };
 
-  // Convert km to miles (1 km = 0.621371 miles)
-  const kmToMiles = (km: number): number => km * 0.621371;
-
   // Convert meters to feet (1 meter = 3.28084 feet)
   const metersToFeet = (meters: number): number => meters * 3.28084;
 
@@ -142,7 +139,7 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
       <div className='grid grid-cols-3 gap-3 mb-4 flex-grow'>
         {activity.distance !== null && (
           <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-900'>{kmToMiles(activity.distance).toFixed(1)}</p>
+            <p className='text-2xl font-bold text-gray-900'>{activity.distance.toFixed(2)}</p>
             <p className='text-xs text-gray-500 mt-0.5'>mi</p>
           </div>
         )}

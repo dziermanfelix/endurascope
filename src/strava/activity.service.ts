@@ -108,11 +108,12 @@ export class ActivityService {
       },
     });
 
-    // Convert BigInt to string for JSON serialization
+    // Convert BigInt to string for JSON serialization and convert distance from km to miles
     return activities.map((activity) => ({
       ...activity,
       stravaId: activity.stravaId.toString(),
       uploadId: activity.uploadId ? activity.uploadId.toString() : null,
+      distance: activity.distance !== null ? activity.distance * 0.621371 : null, // Convert km to miles
     }));
   }
 
