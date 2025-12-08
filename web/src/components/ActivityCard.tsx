@@ -152,17 +152,17 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
           </div>
         )}
 
-        {pace !== null ? (
+        {activity.type !== 'Elliptical' && pace !== null ? (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-900'>{pace}</p>
             <p className='text-xs text-gray-500 mt-0.5'>pace</p>
           </div>
-        ) : (
+        ) : activity.type !== 'Elliptical' ? (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-400'>—</p>
             <p className='text-xs text-gray-400 mt-0.5'>pace</p>
           </div>
-        )}
+        ) : null}
 
         {activity.averageHeartRate !== null && activity.averageHeartRate > 0 ? (
           <div className='text-center'>
@@ -188,7 +188,6 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
           </div>
         )}
       </div>
-
     </div>
   );
 }
