@@ -128,7 +128,7 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
         </div>
       ) : (
         <h3
-          className='text-lg font-bold text-gray-900 mb-4 line-clamp-2 min-h-[3.5rem] cursor-pointer hover:text-blue-600 transition-colors'
+          className='text-lg font-bold text-gray-900 mb-4 line-clamp-2 min-h-14 cursor-pointer hover:text-blue-600 transition-colors'
           onClick={handleNameClick}
           title='Click to edit name'
         >
@@ -137,7 +137,7 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
       )}
 
       {/* Stats grid */}
-      <div className='grid grid-cols-3 gap-3 mb-4 flex-grow'>
+      <div className='grid grid-cols-3 gap-3 mb-4 grow'>
         {activity.distance !== null && (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-900'>{activity.distance.toFixed(2)}</p>
