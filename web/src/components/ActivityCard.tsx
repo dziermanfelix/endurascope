@@ -137,56 +137,63 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
       )}
 
       {/* Stats grid */}
-      <div className='grid grid-cols-3 gap-3 mb-4 grow'>
-        {activity.distance !== null && (
-          <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-900'>{activity.distance.toFixed(2)}</p>
-            <p className='text-xs text-gray-500 mt-0.5'>mi</p>
-          </div>
-        )}
+      <div className='flex flex-col gap-4 mb-4 grow'>
+        {/* Miles and pace row */}
+        <div className='grid grid-cols-2 gap-4'>
+          {activity.distance !== null && (
+            <div className='text-center px-1'>
+              <p className='text-2xl font-bold text-gray-900'>{activity.distance.toFixed(2)}</p>
+              <p className='text-xs text-gray-500 mt-0.5'>mi</p>
+            </div>
+          )}
 
+          {activity.type !== 'Elliptical' && pace !== null ? (
+            <div className='text-center px-1'>
+              <p className='text-2xl font-bold text-gray-900'>{pace}</p>
+              <p className='text-xs text-gray-500 mt-0.5'>pace</p>
+            </div>
+          ) : activity.type !== 'Elliptical' ? (
+            <div className='text-center px-1'>
+              <p className='text-2xl font-bold text-gray-400'>—</p>
+              <p className='text-xs text-gray-400 mt-0.5'>pace</p>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Time row */}
         {activity.movingTime !== null && (
-          <div className='text-center'>
+          <div className='text-center px-1'>
             <p className='text-2xl font-bold text-gray-900'>{formatTime(activity.movingTime)}</p>
             <p className='text-xs text-gray-500 mt-0.5'>time</p>
           </div>
         )}
 
-        {activity.type !== 'Elliptical' && pace !== null ? (
-          <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-900'>{pace}</p>
-            <p className='text-xs text-gray-500 mt-0.5'>pace</p>
-          </div>
-        ) : activity.type !== 'Elliptical' ? (
-          <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-400'>—</p>
-            <p className='text-xs text-gray-400 mt-0.5'>pace</p>
-          </div>
-        ) : null}
+        {/* Other info row */}
+        <div className='grid grid-cols-2 gap-4'>
+          {activity.averageHeartRate !== null && activity.averageHeartRate > 0 ? (
+            <div className='text-center px-1'>
+              <p className='text-2xl font-bold text-gray-900'>{activity.averageHeartRate}</p>
+              <p className='text-xs text-gray-500 mt-0.5'>bpm</p>
+            </div>
+          ) : (
+            <div className='text-center px-1'>
+              <p className='text-2xl font-bold text-gray-400'>—</p>
+              <p className='text-xs text-gray-400 mt-0.5'>hr</p>
+            </div>
+          )}
 
-        {activity.averageHeartRate !== null && activity.averageHeartRate > 0 ? (
-          <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-900'>{activity.averageHeartRate}</p>
-            <p className='text-xs text-gray-500 mt-0.5'>bpm</p>
-          </div>
-        ) : (
-          <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-400'>—</p>
-            <p className='text-xs text-gray-400 mt-0.5'>hr</p>
-          </div>
-        )}
-
-        {activity.calories !== null && activity.calories > 0 ? (
-          <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-900'>{activity.calories}</p>
-            <p className='text-xs text-gray-500 mt-0.5'>cal</p>
-          </div>
-        ) : (
-          <div className='text-center'>
-            <p className='text-2xl font-bold text-gray-400'>—</p>
-            <p className='text-xs text-gray-400 mt-0.5'>cal</p>
-          </div>
-        )}
+          {activity.calories !== null && activity.calories > 0 ? (
+            <div className='text-center px-1'>
+              <p className='text-2xl font-bold text-gray-900'>{activity.calories}</p>
+              <p className='text-xs text-gray-500 mt-0.5'>cal</p>
+            </div>
+          ) : (
+            <div className='text-center px-1'>
+              <p className='text-2xl font-bold text-gray-400'>—</p>
+              <p className='text-xs text-gray-400 mt-0.5'>cal</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
