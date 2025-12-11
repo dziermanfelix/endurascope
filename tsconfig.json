@@ -18,6 +18,6 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "web", "coverage", "test"]
+  "include": ["apps/api/**/*"],
+  "exclude": ["node_modules", "dist", "apps/web", "coverage", "test"]
 }

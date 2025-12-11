@@ -1,8 +1,8 @@
 # compiled output
 /dist
 /node_modules
-web/node_modules
-web/dist
+apps/web/node_modules
+apps/web/dist
 
 # Logs
 logs

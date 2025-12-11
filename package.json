@@ -6,11 +6,11 @@
   "private": true,
   "license": "MIT",
   "workspaces": [
-    "web"
+    "apps/web"
   ],
   "scripts": {
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"apps/api/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -24,10 +24,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "db:refresh": "ts-node -r tsconfig-paths/register src/scripts/truncate-db.ts",
-    "fetch:activities": "ts-node -r tsconfig-paths/register src/scripts/fetch-activities.ts",
-    "web:dev": "npm run dev --workspace=web",
-    "web:build": "npm run build --workspace=web",
+    "db:refresh": "ts-node -r tsconfig-paths/register apps/api/scripts/truncate-db.ts",
+    "fetch:activities": "ts-node -r tsconfig-paths/register apps/api/scripts/fetch-activities.ts",
+    "web:dev": "npm run dev --workspace=apps/web",
+    "web:build": "npm run build --workspace=apps/web",
     "dev": "concurrently \"npm run start:dev\" \"npm run web:dev\"",
     "dev:api": "npm run start:dev"
   },
@@ -74,7 +74,7 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": "apps/api",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

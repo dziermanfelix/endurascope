@@ -159,25 +159,28 @@ If you get an error about missing permissions, the app will automatically re-aut
 ## Project Structure
 
 ```
-├── web/                       # React + TypeScript web frontend
-│   ├── src/
-│   │   ├── App.tsx           # Main app component
-│   │   ├── components/       # React components
-│   │   ├── api/              # API client
-│   │   └── types/            # TypeScript types
-│   └── package.json
-└── src/                       # NestJS backend
-    ├── main.ts                # Application entry point
-    ├── app.module.ts          # Root module
-    ├── activities/            # Activities API module
-    ├── prisma/
-    │   ├── prisma.module.ts  # Prisma module (global)
-    │   └── prisma.service.ts # Prisma service
-    └── strava/
-        ├── strava.module.ts
-        ├── strava.service.ts
-        ├── strava-oauth.service.ts
-        └── activity.service.ts
+├── apps/
+│   ├── web/                   # React + TypeScript web frontend
+│   │   ├── src/
+│   │   │   ├── App.tsx       # Main app component
+│   │   │   ├── components/   # React components
+│   │   │   ├── api/          # API client
+│   │   │   └── types/        # TypeScript types
+│   │   └── package.json
+│   └── api/                   # NestJS backend
+│       ├── main.ts            # Application entry point
+│       ├── app.module.ts      # Root module
+│       ├── activities/        # Activities API module
+│       ├── prisma/
+│       │   ├── prisma.module.ts  # Prisma module (global)
+│       │   └── prisma.service.ts # Prisma service
+│       └── strava/
+│           ├── strava.module.ts
+│           ├── strava.service.ts
+│           ├── strava-oauth.service.ts
+│           └── activity.service.ts
+├── prisma/                    # Prisma schema and migrations
+└── package.json               # Root package.json with workspaces
 ```
 
 ## Features
