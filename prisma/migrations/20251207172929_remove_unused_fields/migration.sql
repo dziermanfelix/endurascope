@@ -8,3 +8,5 @@ ALTER TABLE "activities" DROP COLUMN "workoutType";
 ALTER TABLE "activities" DROP COLUMN "uploadId";
 ALTER TABLE "activities" DROP COLUMN "externalId";
 
+
+
