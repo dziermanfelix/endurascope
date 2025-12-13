@@ -156,8 +156,8 @@ export function WeeklyChart({ activities }: WeeklyChartProps) {
 
   // Calculate derived metrics
   const totalMiles = summary.totalMiles;
-  const activeDays = weekData.filter((d) => d.miles > 0).length;
-  const avgMilesPerDay = activeDays > 0 ? totalMiles / activeDays : 0;
+  const totalRuns = weekData.filter((d) => d.miles > 0).length;
+  const avgMilesPerDay = totalRuns > 0 ? totalMiles / totalRuns : 0;
   const avgHeartRate = summary.heartRateCount > 0 ? summary.heartRateSum / summary.heartRateCount : null;
   const totalTimeHours = summary.totalTime / 3600;
 
@@ -233,43 +233,50 @@ export function WeeklyChart({ activities }: WeeklyChartProps) {
         </div>
 
         {/* Summary Stats */}
-        <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6'>
-          <div className='bg-gray-50 rounded-lg p-4'>
-            <p className='text-sm text-gray-600'>Total Miles</p>
-            <p className='text-2xl font-bold text-gray-900'>{totalMiles.toFixed(2)}</p>
+        <div className='space-y-4 mb-6'>
+          {/* First row: Runs, Miles, Time, Avg Pace */}
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+            <div className='bg-gray-50 rounded-lg p-4'>
+              <p className='text-sm text-gray-600'>Runs</p>
+              <p className='text-2xl font-bold text-gray-900'>{totalRuns}</p>
+            </div>
+            <div className='bg-gray-50 rounded-lg p-4'>
+              <p className='text-sm text-gray-600'>Miles</p>
+              <p className='text-2xl font-bold text-gray-900'>{totalMiles.toFixed(2)}</p>
+            </div>
+            {summary.totalTime > 0 && (
+              <div className='bg-gray-50 rounded-lg p-4'>
+                <p className='text-sm text-gray-600'>Time</p>
+                <p className='text-2xl font-bold text-gray-900'>{formatTime(totalTimeHours)}</p>
+              </div>
+            )}
+            {averagePace !== null && (
+              <div className='bg-gray-50 rounded-lg p-4'>
+                <p className='text-sm text-gray-600'>Avg Pace</p>
+                <p className='text-2xl font-bold text-gray-900'>{averagePace} /mi</p>
+              </div>
+            )}
           </div>
-          <div className='bg-gray-50 rounded-lg p-4'>
-            <p className='text-sm text-gray-600'>Days Active</p>
-            <p className='text-2xl font-bold text-gray-900'>{activeDays} / 7</p>
+
+          {/* Second row: Total Calories, Avg Heart Rate, Avg Miles per Day */}
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            {avgHeartRate !== null && (
+              <div className='bg-gray-50 rounded-lg p-4'>
+                <p className='text-sm text-gray-600'>Avg Heart Rate</p>
+                <p className='text-2xl font-bold text-gray-900'>{Math.round(avgHeartRate)} bpm</p>
+              </div>
+            )}
+            {summary.totalCalories > 0 && (
+              <div className='bg-gray-50 rounded-lg p-4'>
+                <p className='text-sm text-gray-600'>Total Calories</p>
+                <p className='text-2xl font-bold text-gray-900'>{Math.round(summary.totalCalories).toLocaleString()}</p>
+              </div>
+            )}
+            <div className='bg-gray-50 rounded-lg p-4'>
+              <p className='text-sm text-gray-600'>Avg Miles per Day</p>
+              <p className='text-2xl font-bold text-gray-900'>{avgMilesPerDay.toFixed(2)}</p>
+            </div>
           </div>
-          <div className='bg-gray-50 rounded-lg p-4'>
-            <p className='text-sm text-gray-600'>Avg per Day</p>
-            <p className='text-2xl font-bold text-gray-900'>{avgMilesPerDay.toFixed(2)}</p>
-          </div>
-          {summary.totalCalories > 0 && (
-            <div className='bg-gray-50 rounded-lg p-4'>
-              <p className='text-sm text-gray-600'>Total Calories</p>
-              <p className='text-2xl font-bold text-gray-900'>{Math.round(summary.totalCalories).toLocaleString()}</p>
-            </div>
-          )}
-          {summary.totalTime > 0 && (
-            <div className='bg-gray-50 rounded-lg p-4'>
-              <p className='text-sm text-gray-600'>Total Time</p>
-              <p className='text-2xl font-bold text-gray-900'>{formatTime(totalTimeHours)}</p>
-            </div>
-          )}
-          {avgHeartRate !== null && (
-            <div className='bg-gray-50 rounded-lg p-4'>
-              <p className='text-sm text-gray-600'>Avg Heart Rate</p>
-              <p className='text-2xl font-bold text-gray-900'>{Math.round(avgHeartRate)} bpm</p>
-            </div>
-          )}
-          {averagePace !== null && (
-            <div className='bg-gray-50 rounded-lg p-4'>
-              <p className='text-sm text-gray-600'>Avg Pace</p>
-              <p className='text-2xl font-bold text-gray-900'>{averagePace} /mi</p>
-            </div>
-          )}
         </div>
 
         {/* Bar Chart */}
