@@ -1,6 +1,3 @@
--- Rename averageHeartrate to averageHeartRate
-ALTER TABLE "activities" RENAME COLUMN "averageHeartrate" TO "averageHeartRate";
-
 -- Drop unused columns
 ALTER TABLE "activities" DROP COLUMN "timezone";
 ALTER TABLE "activities" DROP COLUMN "utcOffset";
