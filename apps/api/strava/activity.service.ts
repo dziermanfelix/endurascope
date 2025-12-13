@@ -36,6 +36,14 @@ export class ActivityService {
           console.warn(`Failed to fetch detailed info for activity ${activity.id}, using summary data only`);
         }
 
+        // Only save activities of type "Run"
+        // Check both the original type and the detailed sport_type
+        const finalType = activityType || activity.type;
+        if (finalType !== 'Run') {
+          console.log(`Skipping activity ${activity.id} - type is "${finalType}", only "Run" activities are stored`);
+          continue;
+        }
+
         await this.prisma.activity.upsert({
           where: { stravaId: BigInt(activity.id) },
           create: {
@@ -78,6 +86,9 @@ export class ActivityService {
 
   async getAllActivities() {
     const activities = await this.prisma.activity.findMany({
+      where: {
+        type: 'Run',
+      },
       orderBy: {
         startDate: 'desc',
       },

@@ -35,7 +35,6 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
       Swim: 'bg-cyan-500',
       Hike: 'bg-orange-500',
       Workout: 'bg-red-500',
-      Elliptical: 'bg-orange-500',
     };
     return colors[type || ''] || 'bg-gray-500';
   };
@@ -147,17 +146,17 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
             </div>
           )}
 
-          {activity.type !== 'Elliptical' && pace !== null ? (
+          {pace !== null ? (
             <div className='text-center px-1'>
               <p className='text-2xl font-bold text-gray-900'>{pace}</p>
               <p className='text-xs text-gray-500 mt-0.5'>pace</p>
             </div>
-          ) : activity.type !== 'Elliptical' ? (
+          ) : (
             <div className='text-center px-1'>
               <p className='text-2xl font-bold text-gray-400'>—</p>
               <p className='text-xs text-gray-400 mt-0.5'>pace</p>
             </div>
-          ) : null}
+          )}
         </div>
 
         {/* Time row */}
