@@ -161,7 +161,7 @@ export function WeeklyChart({ activities }: WeeklyChartProps) {
   // Calculate derived metrics
   const totalMiles = summary.totalMiles;
   const totalRuns = weekData.filter((d) => d.miles > 0).length;
-  const avgMilesPerDay = totalRuns > 0 ? totalMiles / totalRuns : 0;
+  const avgMilesPerDay = totalRuns > 0 ? totalMiles / 7 : 0;
   const avgHeartRate = summary.heartRateCount > 0 ? summary.heartRateSum / summary.heartRateCount : null;
   const totalTimeHours = summary.totalTime / 3600;
 
