@@ -11,6 +11,7 @@ interface DayData {
   dayLabel: string;
   date: Date;
   miles: number;
+  time: number; // in seconds
 }
 
 // Get the start of the week (Monday) for a given date
@@ -65,6 +66,7 @@ function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]
       dayLabel: `${dayNames[i]} ${date.getDate()}`,
       date: new Date(date),
       miles: 0,
+      time: 0,
     });
   }
 
@@ -94,13 +96,15 @@ function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]
           summary.totalMiles += activity.distance;
         }
 
+        // Add to day time
+        if (activity.movingTime) {
+          days[dayIndex].time += activity.movingTime;
+          summary.totalTime += activity.movingTime;
+        }
+
         // Add to weekly totals
         if (activity.calories) {
           summary.totalCalories += activity.calories;
-        }
-
-        if (activity.movingTime) {
-          summary.totalTime += activity.movingTime;
         }
 
         // Track heart rate
@@ -286,8 +290,57 @@ export function WeeklyChart({ activities }: WeeklyChartProps) {
             <XAxis dataKey='dayLabel' />
             <YAxis label={{ value: 'Miles', angle: -90, position: 'insideLeft' }} />
             <Tooltip
-              formatter={(value: number) => [`${value.toFixed(2)} mi`, 'Distance']}
-              labelFormatter={(label) => label}
+              content={({ active, payload, label }) => {
+                if (!active || !payload || payload.length === 0) return null;
+
+                const data = payload[0].payload as DayData;
+                const miles = data.miles;
+                const timeSeconds = data.time;
+
+                // Format time
+                const formatTime = (seconds: number): string => {
+                  if (seconds === 0) return '0m';
+                  const h = Math.floor(seconds / 3600);
+                  const m = Math.floor((seconds % 3600) / 60);
+                  if (h > 0) {
+                    return `${h}h ${m}m`;
+                  }
+                  return `${m}m`;
+                };
+
+                // Calculate pace (minutes:seconds per mile)
+                const calculatePace = (): string | null => {
+                  if (miles === 0 || timeSeconds === 0) return null;
+                  const secondsPerMile = timeSeconds / miles;
+                  const minutes = Math.floor(secondsPerMile / 60);
+                  const seconds = Math.floor(secondsPerMile % 60);
+                  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                };
+
+                const pace = calculatePace();
+                const timeFormatted = formatTime(timeSeconds);
+
+                return (
+                  <div className='bg-white border border-gray-200 rounded-lg shadow-lg p-3'>
+                    <p className='font-semibold text-gray-900 mb-2'>{label}</p>
+                    <div className='space-y-1 text-sm'>
+                      <div className='text-gray-700'>
+                        Miles: <span className='font-medium'>{miles.toFixed(2)}</span>
+                      </div>
+                      {pace && (
+                        <div className='text-gray-700'>
+                          Pace: <span className='font-medium'>{pace}</span>
+                        </div>
+                      )}
+                      {timeSeconds > 0 && (
+                        <div className='text-gray-700'>
+                          Time: <span className='font-medium'>{timeFormatted}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }}
             />
             <Bar dataKey='miles' fill='#3b82f6' radius={[8, 8, 0, 0]} />
           </BarChart>
