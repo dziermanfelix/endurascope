@@ -262,7 +262,7 @@ export function WeeklyChart({ activities }: WeeklyChartProps) {
             )}
           </div>
 
-          {/* Second row: Total Calories, Avg Heart Rate, Avg Miles per Day */}
+          {/* Second row: Total Calories, Avg Heart Rate, Miles per Day */}
           <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
             {avgHeartRate !== null && (
               <div className='bg-gray-50 rounded-lg p-4'>
@@ -277,7 +277,7 @@ export function WeeklyChart({ activities }: WeeklyChartProps) {
               </div>
             )}
             <div className='bg-gray-50 rounded-lg p-4'>
-              <p className='text-sm text-gray-600'>Avg Miles per Day</p>
+              <p className='text-sm text-gray-600'>Miles Per Day</p>
               <p className='text-2xl font-bold text-gray-900'>{avgMilesPerDay.toFixed(2)}</p>
             </div>
           </div>
