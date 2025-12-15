@@ -199,7 +199,7 @@ export function WeeklyChart({ activities }: WeeklyChartProps) {
             <button
               onClick={goToPreviousWeek}
               disabled={currentWeekIndex >= availableWeeks.length - 1}
-              className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
+              className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 hover:cursor-pointer disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
             >
               <svg
                 xmlns='http://www.w3.org/2000/svg'
@@ -219,7 +219,7 @@ export function WeeklyChart({ activities }: WeeklyChartProps) {
             <button
               onClick={goToNextWeek}
               disabled={currentWeekIndex === 0}
-              className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
+              className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 hover:cursor-pointer disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
             >
               Next
               <svg
