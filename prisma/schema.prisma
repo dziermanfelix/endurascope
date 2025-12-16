@@ -47,6 +47,21 @@ model Activity {
   @@index([type])
 }
 
+model TrainingBlock {
+  id          String   @id @default(uuid())
+  raceName    String
+  identifier  String
+  raceDate    DateTime
+  startDate   DateTime
+  durationWeeks Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("training_blocks")
+  @@index([raceDate])
+  @@index([startDate])
+}
+
 
 
 
