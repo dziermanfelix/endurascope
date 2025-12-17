@@ -17,6 +17,14 @@ export interface CreateTrainingBlockDto {
   durationWeeks: number;
 }
 
+export interface UpdateTrainingBlockDto {
+  raceName?: string;
+  identifier?: string;
+  raceDate?: Date;
+  startDate?: Date;
+  durationWeeks?: number;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export async function fetchTrainingBlocks(): Promise<TrainingBlock[]> {
@@ -42,4 +50,32 @@ export async function createTrainingBlock(data: CreateTrainingBlockDto): Promise
   }
 
   return response.json();
+}
+
+export async function updateTrainingBlock(id: string, data: UpdateTrainingBlockDto): Promise<TrainingBlock> {
+  const response = await fetch(`${API_BASE_URL}/api/training-blocks/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update training block');
+  }
+
+  return response.json();
+}
+
+export async function deleteTrainingBlock(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/training-blocks/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to delete training block');
+  }
 }
