@@ -257,7 +257,7 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
   if (availableWeeks.length === 0 && activeTab === 'daily') {
     return (
       <div className='bg-white rounded-lg shadow-md p-8 text-center'>
-        <p className='text-gray-600 text-lg'>No activity data available for weekly chart.</p>
+        <p className='text-gray-600 text-lg'>No activity data available for weekly breakdown.</p>
       </div>
     );
   }

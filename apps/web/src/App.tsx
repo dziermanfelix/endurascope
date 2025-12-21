@@ -11,24 +11,24 @@ function Navigation() {
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='flex space-x-8'>
           <Link
-            to='/'
+            to='/weekly'
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              location.pathname === '/'
+              location.pathname === '/weekly' || location.pathname === '/'
+                ? 'border-orange-600 text-orange-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Weekly Breakdown
+          </Link>
+          <Link
+            to='/activities'
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              location.pathname === '/activities'
                 ? 'border-orange-600 text-orange-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
             Activities
-          </Link>
-          <Link
-            to='/weekly'
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              location.pathname === '/weekly'
-                ? 'border-orange-600 text-orange-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Weekly Chart
           </Link>
           <Link
             to='/training-blocks'
@@ -59,8 +59,9 @@ function App() {
           <Navigation />
 
           <Routes>
-            <Route path='/' element={<ActivitiesPage />} />
+            <Route path='/' element={<WeeklyChartPage />} />
             <Route path='/weekly' element={<WeeklyChartPage />} />
+            <Route path='/activities' element={<ActivitiesPage />} />
             <Route path='/training-blocks' element={<ManageTrainingBlocksPage />} />
           </Routes>
         </div>
