@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity } from '../types/activity';
+import { TrainingBlock } from '../api/training-blocks';
 
 interface WeeklyChartProps {
   activities: Activity[];
+  trainingBlocks: TrainingBlock[];
 }
 
 interface DayData {
@@ -57,13 +59,14 @@ function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]
 
   // Initialize all 7 days
   const days: DayData[] = [];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   for (let i = 0; i < 7; i++) {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + i);
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dayOfWeek = date.getDay();
     days.push({
-      day: dayNames[i],
-      dayLabel: `${dayNames[i]} ${date.getDate()}`,
+      day: dayNames[dayOfWeek],
+      dayLabel: `${dayNames[dayOfWeek]} ${date.getDate()}`,
       date: new Date(date),
       miles: 0,
       time: 0,
@@ -124,14 +127,96 @@ function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]
   return { days, summary };
 }
 
-export function WeeklyChart({ activities }: WeeklyChartProps) {
+// Get all weeks for a training block
+function getTrainingBlockWeeks(trainingBlock: TrainingBlock): Date[] {
+  const weeks: Date[] = [];
+  const startDate = new Date(trainingBlock.startDate);
+  startDate.setHours(0, 0, 0, 0);
+
+  // First week starts on the actual training block start date
+  weeks.push(startDate);
+
+  // Subsequent weeks start 7 days after the previous week
+  for (let i = 1; i < trainingBlock.durationWeeks; i++) {
+    const weekStart = new Date(startDate);
+    weekStart.setDate(startDate.getDate() + i * 7);
+    weeks.push(weekStart);
+  }
+
+  return weeks;
+}
+
+// Get all week summaries for a training block
+function getAllWeekSummaries(
+  activities: Activity[],
+  trainingBlock: TrainingBlock
+): Array<{ weekStart: Date; weekNumber: number; summary: WeekSummary }> {
+  const weeks = getTrainingBlockWeeks(trainingBlock);
+  return weeks.map((weekStart, index) => {
+    const { summary } = getWeekData(activities, weekStart);
+    return {
+      weekStart,
+      weekNumber: index + 1,
+      summary,
+    };
+  });
+}
+
+export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
+  const [activeTab, setActiveTab] = useState<'daily' | 'summary'>('daily');
+  const [selectedTrainingBlockId, setSelectedTrainingBlockId] = useState<string | null>(null);
+
   const availableWeeks = useMemo(() => getAvailableWeeks(activities), [activities]);
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
 
-  if (availableWeeks.length === 0) {
+  // Get selected training block or use the most recent one
+  const selectedTrainingBlock = useMemo(() => {
+    if (selectedTrainingBlockId) {
+      return trainingBlocks.find((tb) => tb.id === selectedTrainingBlockId) || null;
+    }
+    // Default to most recent training block (by race date)
+    return trainingBlocks.length > 0 ? trainingBlocks[trainingBlocks.length - 1] : null;
+  }, [trainingBlocks, selectedTrainingBlockId]);
+
+  // Get all week summaries for the selected training block
+  const weekSummaries = useMemo(() => {
+    if (!selectedTrainingBlock) return [];
+    return getAllWeekSummaries(activities, selectedTrainingBlock);
+  }, [activities, selectedTrainingBlock]);
+
+  // Format time helper
+  const formatTime = (hours: number): string => {
+    const h = Math.floor(hours);
+    const m = Math.floor((hours - h) * 60);
+    if (h > 0) {
+      return `${h}h ${m}m`;
+    }
+    return `${m}m`;
+  };
+
+  // Calculate average pace helper
+  const calculateAveragePace = (summary: WeekSummary): string | null => {
+    if (summary.totalMiles === 0 || summary.totalTime === 0) return null;
+    const secondsPerMile = summary.totalTime / summary.totalMiles;
+    const minutes = Math.floor(secondsPerMile / 60);
+    const seconds = Math.floor(secondsPerMile % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  if (availableWeeks.length === 0 && activeTab === 'daily') {
     return (
       <div className='bg-white rounded-lg shadow-md p-8 text-center'>
         <p className='text-gray-600 text-lg'>No activity data available for weekly chart.</p>
+      </div>
+    );
+  }
+
+  if (activeTab === 'summary' && trainingBlocks.length === 0) {
+    return (
+      <div className='bg-white rounded-lg shadow-md p-8 text-center'>
+        <p className='text-gray-600 text-lg'>
+          No training blocks available. Create a training block to view weekly summaries.
+        </p>
       </div>
     );
   }
@@ -158,193 +243,303 @@ export function WeeklyChart({ activities }: WeeklyChartProps) {
     }
   };
 
-  // Calculate derived metrics
+  // Calculate derived metrics for daily view
   const totalMiles = summary.totalMiles;
   const totalRuns = weekData.filter((d) => d.miles > 0).length;
   const avgMilesPerDay = totalRuns > 0 ? totalMiles / 7 : 0;
   const avgHeartRate = summary.heartRateCount > 0 ? summary.heartRateSum / summary.heartRateCount : null;
   const totalTimeHours = summary.totalTime / 3600;
-
-  // Calculate average pace (minutes:seconds per mile)
-  const calculateAveragePace = (): string | null => {
-    if (summary.totalMiles === 0 || summary.totalTime === 0) return null;
-    const secondsPerMile = summary.totalTime / summary.totalMiles;
-    const minutes = Math.floor(secondsPerMile / 60);
-    const seconds = Math.floor(secondsPerMile % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const averagePace = calculateAveragePace();
-
-  // Format time
-  const formatTime = (hours: number): string => {
-    const h = Math.floor(hours);
-    const m = Math.floor((hours - h) * 60);
-    if (h > 0) {
-      return `${h}h ${m}m`;
-    }
-    return `${m}m`;
-  };
+  const averagePace = calculateAveragePace(summary);
 
   return (
     <div className='space-y-6'>
-      {/* Week Navigation */}
+      {/* Tabs */}
       <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6'>
-        <div className='flex items-center justify-between mb-6'>
-          <div>
-            <h2 className='text-2xl font-bold text-gray-900'>Weekly Training Progress</h2>
-            <p className='text-gray-600 mt-1'>{weekLabel}</p>
-          </div>
-          <div className='flex items-center gap-4'>
-            <button
-              onClick={goToPreviousWeek}
-              disabled={currentWeekIndex >= availableWeeks.length - 1}
-              className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 hover:cursor-pointer disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
-            >
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                fill='none'
-                viewBox='0 0 24 24'
-                strokeWidth={2}
-                stroke='currentColor'
-                className='w-5 h-5'
-              >
-                <path strokeLinecap='round' strokeLinejoin='round' d='M15.75 19.5L8.25 12l7.5-7.5' />
-              </svg>
-              Previous
-            </button>
-            <span className='text-sm text-gray-500'>
-              Week {availableWeeks.length - currentWeekIndex} of {availableWeeks.length}
-            </span>
-            <button
-              onClick={goToNextWeek}
-              disabled={currentWeekIndex === 0}
-              className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 hover:cursor-pointer disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
-            >
-              Next
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                fill='none'
-                viewBox='0 0 24 24'
-                strokeWidth={2}
-                stroke='currentColor'
-                className='w-5 h-5'
-              >
-                <path strokeLinecap='round' strokeLinejoin='round' d='M8.25 4.5l7.5 7.5-7.5 7.5' />
-              </svg>
-            </button>
-          </div>
+        <div className='flex border-b border-gray-200 mb-6'>
+          <button
+            onClick={() => setActiveTab('daily')}
+            className={`px-6 py-3 font-medium text-sm transition-colors ${
+              activeTab === 'daily' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Daily View
+          </button>
+          <button
+            onClick={() => setActiveTab('summary')}
+            className={`px-6 py-3 font-medium text-sm transition-colors ${
+              activeTab === 'summary' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Weekly Summary
+          </button>
         </div>
 
-        {/* Summary Stats */}
-        <div className='space-y-4 mb-6'>
-          {/* First row: Runs, Miles, Time, Avg Pace */}
-          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-            <div className='bg-gray-50 rounded-lg p-4'>
-              <p className='text-sm text-gray-600'>Runs</p>
-              <p className='text-2xl font-bold text-gray-900'>{totalRuns}</p>
-            </div>
-            <div className='bg-gray-50 rounded-lg p-4'>
-              <p className='text-sm text-gray-600'>Miles</p>
-              <p className='text-2xl font-bold text-gray-900'>{totalMiles.toFixed(2)}</p>
-            </div>
-            {summary.totalTime > 0 && (
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-sm text-gray-600'>Time</p>
-                <p className='text-2xl font-bold text-gray-900'>{formatTime(totalTimeHours)}</p>
-              </div>
-            )}
-            {averagePace !== null && (
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-sm text-gray-600'>Avg Pace</p>
-                <p className='text-2xl font-bold text-gray-900'>{averagePace} /mi</p>
-              </div>
-            )}
+        {activeTab === 'summary' && (
+          <div className='mb-6'>
+            <label className='block text-sm font-medium text-gray-700 mb-2'>Training Block</label>
+            <select
+              value={selectedTrainingBlockId || ''}
+              onChange={(e) => setSelectedTrainingBlockId(e.target.value || null)}
+              className='w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+            >
+              {trainingBlocks.length === 0 ? (
+                <option value=''>No training blocks available</option>
+              ) : (
+                trainingBlocks.map((tb) => (
+                  <option key={tb.id} value={tb.id}>
+                    {tb.raceName} ({new Date(tb.startDate).toLocaleDateString()} -{' '}
+                    {new Date(tb.raceDate).toLocaleDateString()})
+                  </option>
+                ))
+              )}
+            </select>
           </div>
+        )}
 
-          {/* Second row: Total Calories, Avg Heart Rate, Miles per Day */}
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-            {avgHeartRate !== null && (
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-sm text-gray-600'>Avg Heart Rate</p>
-                <p className='text-2xl font-bold text-gray-900'>{Math.round(avgHeartRate)} bpm</p>
+        {activeTab === 'daily' && (
+          <>
+            {/* Week Navigation */}
+            <div className='flex items-center justify-between mb-6'>
+              <div>
+                <h2 className='text-2xl font-bold text-gray-900'>Weekly Training Progress</h2>
+                <p className='text-gray-600 mt-1'>{weekLabel}</p>
               </div>
-            )}
-            {summary.totalCalories > 0 && (
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-sm text-gray-600'>Total Calories</p>
-                <p className='text-2xl font-bold text-gray-900'>{Math.round(summary.totalCalories).toLocaleString()}</p>
+              <div className='flex items-center gap-4'>
+                <button
+                  onClick={goToPreviousWeek}
+                  disabled={currentWeekIndex >= availableWeeks.length - 1}
+                  className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 hover:cursor-pointer disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
+                >
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    strokeWidth={2}
+                    stroke='currentColor'
+                    className='w-5 h-5'
+                  >
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M15.75 19.5L8.25 12l7.5-7.5' />
+                  </svg>
+                  Previous
+                </button>
+                <span className='text-sm text-gray-500'>
+                  Week {availableWeeks.length - currentWeekIndex} of {availableWeeks.length}
+                </span>
+                <button
+                  onClick={goToNextWeek}
+                  disabled={currentWeekIndex === 0}
+                  className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 hover:cursor-pointer disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
+                >
+                  Next
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    strokeWidth={2}
+                    stroke='currentColor'
+                    className='w-5 h-5'
+                  >
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M8.25 4.5l7.5 7.5-7.5 7.5' />
+                  </svg>
+                </button>
               </div>
-            )}
-            <div className='bg-gray-50 rounded-lg p-4'>
-              <p className='text-sm text-gray-600'>Miles Per Day</p>
-              <p className='text-2xl font-bold text-gray-900'>{avgMilesPerDay.toFixed(2)}</p>
             </div>
-          </div>
-        </div>
 
-        {/* Bar Chart */}
-        <ResponsiveContainer width='100%' height={400}>
-          <BarChart data={weekData}>
-            <CartesianGrid strokeDasharray='3 3' />
-            <XAxis dataKey='dayLabel' />
-            <YAxis label={{ value: 'Miles', angle: -90, position: 'insideLeft' }} />
-            <Tooltip
-              content={({ active, payload, label }) => {
-                if (!active || !payload || payload.length === 0) return null;
-
-                const data = payload[0].payload as DayData;
-                const miles = data.miles;
-                const timeSeconds = data.time;
-
-                // Format time
-                const formatTime = (seconds: number): string => {
-                  if (seconds === 0) return '0m';
-                  const h = Math.floor(seconds / 3600);
-                  const m = Math.floor((seconds % 3600) / 60);
-                  if (h > 0) {
-                    return `${h}h ${m}m`;
-                  }
-                  return `${m}m`;
-                };
-
-                // Calculate pace (minutes:seconds per mile)
-                const calculatePace = (): string | null => {
-                  if (miles === 0 || timeSeconds === 0) return null;
-                  const secondsPerMile = timeSeconds / miles;
-                  const minutes = Math.floor(secondsPerMile / 60);
-                  const seconds = Math.floor(secondsPerMile % 60);
-                  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                };
-
-                const pace = calculatePace();
-                const timeFormatted = formatTime(timeSeconds);
-
-                return (
-                  <div className='bg-white border border-gray-200 rounded-lg shadow-lg p-3'>
-                    <p className='font-semibold text-gray-900 mb-2'>{label}</p>
-                    <div className='space-y-1 text-sm'>
-                      <div className='text-gray-700'>
-                        Miles: <span className='font-medium'>{miles.toFixed(2)}</span>
-                      </div>
-                      {pace && (
-                        <div className='text-gray-700'>
-                          Pace: <span className='font-medium'>{pace}</span>
-                        </div>
-                      )}
-                      {timeSeconds > 0 && (
-                        <div className='text-gray-700'>
-                          Time: <span className='font-medium'>{timeFormatted}</span>
-                        </div>
-                      )}
-                    </div>
+            {/* Summary Stats */}
+            <div className='space-y-4 mb-6'>
+              {/* First row: Runs, Miles, Time, Avg Pace */}
+              <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+                <div className='bg-gray-50 rounded-lg p-4'>
+                  <p className='text-sm text-gray-600'>Runs</p>
+                  <p className='text-2xl font-bold text-gray-900'>{totalRuns}</p>
+                </div>
+                <div className='bg-gray-50 rounded-lg p-4'>
+                  <p className='text-sm text-gray-600'>Miles</p>
+                  <p className='text-2xl font-bold text-gray-900'>{totalMiles.toFixed(2)}</p>
+                </div>
+                {summary.totalTime > 0 && (
+                  <div className='bg-gray-50 rounded-lg p-4'>
+                    <p className='text-sm text-gray-600'>Time</p>
+                    <p className='text-2xl font-bold text-gray-900'>{formatTime(totalTimeHours)}</p>
                   </div>
-                );
-              }}
-            />
-            <Bar dataKey='miles' fill='#3b82f6' radius={[8, 8, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+                )}
+                {averagePace !== null && (
+                  <div className='bg-gray-50 rounded-lg p-4'>
+                    <p className='text-sm text-gray-600'>Avg Pace</p>
+                    <p className='text-2xl font-bold text-gray-900'>{averagePace} /mi</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Second row: Total Calories, Avg Heart Rate, Miles per Day */}
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                {avgHeartRate !== null && (
+                  <div className='bg-gray-50 rounded-lg p-4'>
+                    <p className='text-sm text-gray-600'>Avg Heart Rate</p>
+                    <p className='text-2xl font-bold text-gray-900'>{Math.round(avgHeartRate)} bpm</p>
+                  </div>
+                )}
+                {summary.totalCalories > 0 && (
+                  <div className='bg-gray-50 rounded-lg p-4'>
+                    <p className='text-sm text-gray-600'>Total Calories</p>
+                    <p className='text-2xl font-bold text-gray-900'>
+                      {Math.round(summary.totalCalories).toLocaleString()}
+                    </p>
+                  </div>
+                )}
+                <div className='bg-gray-50 rounded-lg p-4'>
+                  <p className='text-sm text-gray-600'>Miles Per Day</p>
+                  <p className='text-2xl font-bold text-gray-900'>{avgMilesPerDay.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bar Chart */}
+            <ResponsiveContainer width='100%' height={400}>
+              <BarChart data={weekData}>
+                <CartesianGrid strokeDasharray='3 3' />
+                <XAxis dataKey='dayLabel' />
+                <YAxis label={{ value: 'Miles', angle: -90, position: 'insideLeft' }} />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload || payload.length === 0) return null;
+
+                    const data = payload[0].payload as DayData;
+                    const miles = data.miles;
+                    const timeSeconds = data.time;
+
+                    // Format time
+                    const formatTime = (seconds: number): string => {
+                      if (seconds === 0) return '0m';
+                      const h = Math.floor(seconds / 3600);
+                      const m = Math.floor((seconds % 3600) / 60);
+                      if (h > 0) {
+                        return `${h}h ${m}m`;
+                      }
+                      return `${m}m`;
+                    };
+
+                    // Calculate pace (minutes:seconds per mile)
+                    const calculatePace = (): string | null => {
+                      if (miles === 0 || timeSeconds === 0) return null;
+                      const secondsPerMile = timeSeconds / miles;
+                      const minutes = Math.floor(secondsPerMile / 60);
+                      const seconds = Math.floor(secondsPerMile % 60);
+                      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    };
+
+                    const pace = calculatePace();
+                    const timeFormatted = formatTime(timeSeconds);
+
+                    return (
+                      <div className='bg-white border border-gray-200 rounded-lg shadow-lg p-3'>
+                        <p className='font-semibold text-gray-900 mb-2'>{label}</p>
+                        <div className='space-y-1 text-sm'>
+                          <div className='text-gray-700'>
+                            Miles: <span className='font-medium'>{miles.toFixed(2)}</span>
+                          </div>
+                          {pace && (
+                            <div className='text-gray-700'>
+                              Pace: <span className='font-medium'>{pace}</span>
+                            </div>
+                          )}
+                          {timeSeconds > 0 && (
+                            <div className='text-gray-700'>
+                              Time: <span className='font-medium'>{timeFormatted}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey='miles' fill='#3b82f6' radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </>
+        )}
+
+        {activeTab === 'summary' && (
+          <div className='space-y-4'>
+            {!selectedTrainingBlock ? (
+              <div className='text-center py-8 text-gray-600'>
+                <p>Please select a training block to view weekly summaries.</p>
+              </div>
+            ) : (
+              <>
+                <div className='mb-4'>
+                  <h3 className='text-xl font-bold text-gray-900'>{selectedTrainingBlock.raceName}</h3>
+                  <p className='text-gray-600 text-sm'>
+                    {new Date(selectedTrainingBlock.startDate).toLocaleDateString()} -{' '}
+                    {new Date(selectedTrainingBlock.raceDate).toLocaleDateString()}
+                  </p>
+                </div>
+
+                {weekSummaries.length === 0 ? (
+                  <div className='text-center py-8 text-gray-600'>
+                    <p>No activity data available for this training block.</p>
+                  </div>
+                ) : (
+                  <div className='space-y-4'>
+                    {weekSummaries.map(({ weekStart, weekNumber, summary }) => {
+                      const weekEnd = new Date(weekStart);
+                      weekEnd.setDate(weekStart.getDate() + 6);
+                      const weekLabel = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                      const avgHeartRate =
+                        summary.heartRateCount > 0 ? summary.heartRateSum / summary.heartRateCount : null;
+                      const totalTimeHours = summary.totalTime / 3600;
+                      const avgPace = calculateAveragePace(summary);
+
+                      return (
+                        <div key={weekNumber} className='bg-gray-50 rounded-lg p-6 border border-gray-200'>
+                          <div className='flex items-center justify-between mb-4'>
+                            <div>
+                              <h4 className='text-lg font-semibold text-gray-900'>Week {weekNumber}</h4>
+                              <p className='text-sm text-gray-600'>{weekLabel}</p>
+                            </div>
+                          </div>
+
+                          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+                            <div>
+                              <p className='text-sm text-gray-600'>Total Miles</p>
+                              <p className='text-2xl font-bold text-gray-900'>{summary.totalMiles.toFixed(2)}</p>
+                            </div>
+                            {summary.totalTime > 0 && (
+                              <div>
+                                <p className='text-sm text-gray-600'>Total Time</p>
+                                <p className='text-2xl font-bold text-gray-900'>{formatTime(totalTimeHours)}</p>
+                              </div>
+                            )}
+                            {avgPace !== null && (
+                              <div>
+                                <p className='text-sm text-gray-600'>Avg Pace</p>
+                                <p className='text-2xl font-bold text-gray-900'>{avgPace} /mi</p>
+                              </div>
+                            )}
+                            {summary.totalCalories > 0 && (
+                              <div>
+                                <p className='text-sm text-gray-600'>Calories</p>
+                                <p className='text-2xl font-bold text-gray-900'>
+                                  {Math.round(summary.totalCalories).toLocaleString()}
+                                </p>
+                              </div>
+                            )}
+                            {avgHeartRate !== null && (
+                              <div>
+                                <p className='text-sm text-gray-600'>Avg Heart Rate</p>
+                                <p className='text-2xl font-bold text-gray-900'>{Math.round(avgHeartRate)} bpm</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

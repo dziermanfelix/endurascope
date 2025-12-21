@@ -2,30 +2,33 @@ import { useEffect, useState } from 'react';
 import type { Activity } from '../types/activity';
 import { WeeklyChart } from '../components/WeeklyChart';
 import { fetchActivities } from '../api/activities';
+import { fetchTrainingBlocks, type TrainingBlock } from '../api/training-blocks';
 import { CreateTrainingBlockModal } from '../components/CreateTrainingBlockModal';
 
 export function WeeklyChartPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [trainingBlocks, setTrainingBlocks] = useState<TrainingBlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const loadActivities = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const data = await fetchActivities();
-        setActivities(data);
+        const [activitiesData, trainingBlocksData] = await Promise.all([fetchActivities(), fetchTrainingBlocks()]);
+        setActivities(activitiesData);
+        setTrainingBlocks(trainingBlocksData);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load activities');
-        console.error('Error loading activities:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+        console.error('Error loading data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadActivities();
+    loadData();
   }, []);
 
   if (loading) {
@@ -59,14 +62,19 @@ export function WeeklyChartPage() {
           Create Training Block
         </button>
       </div>
-      <WeeklyChart activities={activities} />
+      <WeeklyChart activities={activities} trainingBlocks={trainingBlocks} />
 
       <CreateTrainingBlockModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={() => {
-          // Optionally reload training blocks or show success message
-          console.log('Training block created successfully!');
+        onSuccess={async () => {
+          // Reload training blocks after creation
+          try {
+            const updatedBlocks = await fetchTrainingBlocks();
+            setTrainingBlocks(updatedBlocks);
+          } catch (err) {
+            console.error('Error reloading training blocks:', err);
+          }
         }}
       />
     </>
