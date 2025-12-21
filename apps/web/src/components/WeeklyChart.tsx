@@ -133,14 +133,65 @@ function getTrainingBlockWeeks(trainingBlock: TrainingBlock): Date[] {
   const startDate = new Date(trainingBlock.startDate);
   startDate.setHours(0, 0, 0, 0);
 
-  // First week starts on the actual training block start date
-  weeks.push(startDate);
+  // First week starts on the Monday on or after the training block start date
+  // If start date is Monday, use it. Otherwise, find the next Monday.
+  const startDayOfWeek = startDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  let firstWeekStart: Date;
+  if (startDayOfWeek === 1) {
+    // Start date is already Monday, use it
+    firstWeekStart = new Date(startDate);
+  } else if (startDayOfWeek === 0) {
+    // Start date is Sunday, next Monday is 1 day away
+    firstWeekStart = new Date(startDate);
+    firstWeekStart.setDate(startDate.getDate() + 1);
+  } else {
+    // Start date is Tuesday-Saturday, find the next Monday
+    const daysUntilNextMonday = 8 - startDayOfWeek;
+    firstWeekStart = new Date(startDate);
+    firstWeekStart.setDate(startDate.getDate() + daysUntilNextMonday);
+  }
+  firstWeekStart.setHours(0, 0, 0, 0);
+  weeks.push(firstWeekStart);
 
-  // Subsequent weeks start 7 days after the previous week
-  for (let i = 1; i < trainingBlock.durationWeeks; i++) {
-    const weekStart = new Date(startDate);
-    weekStart.setDate(startDate.getDate() + i * 7);
-    weeks.push(weekStart);
+  // If duration is only 1 week, we're done
+  if (trainingBlock.durationWeeks === 1) {
+    return weeks;
+  }
+
+  // Week 1 is 7 days starting from firstWeekStart (Monday), so it ends on firstWeekStart + 6 days
+  // Week 2 should start on the Monday after Week 1 ends
+  const week1End = new Date(firstWeekStart);
+  week1End.setDate(firstWeekStart.getDate() + 6); // Week 1 ends 6 days after start (7 days total)
+  week1End.setHours(23, 59, 59, 999);
+
+  // Find the Monday after Week 1 ends
+  const week1EndDayOfWeek = week1End.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  let daysUntilNextMonday;
+  if (week1EndDayOfWeek === 0) {
+    // Week 1 ends on Sunday -> next Monday is 1 day away
+    daysUntilNextMonday = 1;
+  } else if (week1EndDayOfWeek === 1) {
+    // Week 1 ends on Monday -> next Monday is 7 days away
+    daysUntilNextMonday = 7;
+  } else {
+    // Week 1 ends Tuesday-Saturday -> next Monday is 8 - dayOfWeek days away
+    daysUntilNextMonday = 8 - week1EndDayOfWeek;
+  }
+
+  const secondWeekStart = new Date(week1End);
+  secondWeekStart.setDate(week1End.getDate() + daysUntilNextMonday);
+  secondWeekStart.setHours(0, 0, 0, 0);
+
+  // Subsequent weeks start on Monday, 7 days apart
+  // We already have week 1, so we need durationWeeks - 1 more weeks
+  for (let i = 0; i < trainingBlock.durationWeeks - 1; i++) {
+    const weekStart = new Date(secondWeekStart);
+    weekStart.setDate(secondWeekStart.getDate() + i * 7);
+    // Ensure we don't add duplicate weeks
+    const weekStartTime = weekStart.getTime();
+    if (!weeks.some((w) => w.getTime() === weekStartTime)) {
+      weeks.push(weekStart);
+    }
   }
 
   return weeks;
