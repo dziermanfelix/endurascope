@@ -15,7 +15,7 @@ export interface StravaActivity {
   calories?: number | null;
   average_speed?: number | null;
   type: string;
-  sport_type?: string; // More specific type from detailed activity endpoint
+  sport_type?: string;
   start_date: string;
   start_date_local: string;
   timezone: string;
@@ -145,54 +145,64 @@ export class StravaService {
       await this.initializeToken();
     }
 
-    try {
-      const response = await this.apiClient.get('/athlete/activities', {
-        params: {
-          page,
-          per_page: perPage,
-        },
-      });
+    let activities = [];
+    let currPage = page;
 
-      return response.data;
-    } catch (error) {
-      if (error.response?.status === 401) {
-        // Check if it's a missing permission error
-        const errors = error.response?.data?.errors || [];
-        const missingPermission = errors.find(
-          (e: any) => e.field === 'activity:read_permission' && e.code === 'missing' && e.resource === 'AccessToken'
-        );
-
-        if (missingPermission) {
-          if (!this.oauthService) {
-            throw new Error(
-              'Token missing required permissions. Please re-authorize your application with the scope activity:read_all.'
-            );
-          }
-          await this.oauthService.authorize();
-          // Retry with new token
-          await this.initializeToken();
-          const retryResponse = await this.apiClient.get('/athlete/activities', {
-            params: {
-              page,
-              per_page: perPage,
-            },
-          });
-          return retryResponse.data;
-        }
-
-        // Token expired, refresh and retry
-        await this.initializeToken();
-        const retryResponse = await this.apiClient.get('/athlete/activities', {
+    while (true) {
+      try {
+        const response = await this.apiClient.get('/athlete/activities', {
           params: {
-            page,
+            page: currPage,
             per_page: perPage,
           },
         });
-        return retryResponse.data;
+        const data = response.data;
+        console.log('data', data);
+        if (!data || data.length === 0) break;
+        currPage += 1;
+        activities.push(...data);
+      } catch (error) {
+        if (error.response?.status === 401) {
+          const errors = error.response?.data?.errors || [];
+          const missingPermission = errors.find(
+            (e: any) => e.field === 'activity:read_permission' && e.code === 'missing' && e.resource === 'AccessToken'
+          );
+          if (missingPermission) {
+            if (!this.oauthService) {
+              throw new Error(
+                'Token missing required permissions. Please re-authorize your application with the scope activity:read_all.'
+              );
+            }
+            await this.oauthService.authorize();
+            await this.initializeToken();
+            const retryResponse = await this.apiClient.get('/athlete/activities', {
+              params: {
+                page: currPage,
+                per_page: perPage,
+              },
+            });
+            const data = retryResponse.data;
+            if (!data || data.length === 0) break;
+            currPage += 1;
+            activities.push(...data);
+          }
+          await this.initializeToken();
+          const retryResponse = await this.apiClient.get('/athlete/activities', {
+            params: {
+              page: currPage,
+              per_page: perPage,
+            },
+          });
+          const data = retryResponse.data;
+          if (!data || data.length === 0) break;
+          currPage += 1;
+          activities.push(...data);
+        }
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Failed to fetch activities: ${errorMessage}`);
       }
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to fetch activities: ${errorMessage}`);
     }
+    return activities;
   }
 
   async printActivities(): Promise<void> {
@@ -307,20 +317,6 @@ export class StravaService {
 
       const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
       throw new Error(`Failed to update activity: ${errorMessage}`);
-    }
-  }
-
-  private formatTime(seconds: number): string {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m ${secs}s`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${secs}s`;
-    } else {
-      return `${secs}s`;
     }
   }
 }

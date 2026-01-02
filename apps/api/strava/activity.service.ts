@@ -15,35 +15,21 @@ export class ActivityService {
     }
 
     for (const activity of activities) {
+      if (activity.type !== 'Run') continue; // process runs only
       try {
-        // Fetch detailed activity info to get calories, heart rate, and other detailed fields
-        // The list endpoint doesn't include these fields
         let detailedActivity: StravaActivity | null = null;
         let activityType = activity.type || null;
 
         try {
           detailedActivity = await this.stravaService.getActivityById(activity.id);
-          // Use sport_type if available and different from "Workout"
-          if (detailedActivity.sport_type && detailedActivity.sport_type !== 'Workout') {
-            activityType = detailedActivity.sport_type;
-          }
-          // Use detailed activity data for calories, heart rate, and speed
           activity.average_heartrate = detailedActivity.average_heartrate ?? activity.average_heartrate;
           activity.calories = detailedActivity.calories ?? activity.calories;
           activity.average_speed = detailedActivity.average_speed ?? activity.average_speed;
         } catch (error) {
-          // If fetching detailed info fails, just use the original activity data
-          console.warn(`Failed to fetch detailed info for activity ${activity.id}, using summary data only`);
+          console.warn(
+            `Failed to fetch detailed info for activity (${activity.id}|${activity.name}), using summary data only`
+          );
         }
-
-        // Only save activities of type "Run"
-        // Check both the original type and the detailed sport_type
-        const finalType = activityType || activity.type;
-        if (finalType !== 'Run') {
-          console.log(`Skipping activity ${activity.id} - type is "${finalType}", only "Run" activities are stored`);
-          continue;
-        }
-
         await this.prisma.activity.upsert({
           where: { stravaId: BigInt(activity.id) },
           create: {

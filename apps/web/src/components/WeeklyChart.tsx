@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity } from '../types/activity';
 import { TrainingBlock } from '../api/training-blocks';
+import { formatTimeFromHours, formatTimeFromSecondsSimple } from '../util/time';
 
 interface WeeklyChartProps {
   activities: Activity[];
@@ -13,7 +14,7 @@ interface DayData {
   dayLabel: string;
   date: Date;
   miles: number;
-  time: number; // in seconds
+  time: number;
 }
 
 // Get the start of the week (Monday) for a given date
@@ -235,16 +236,6 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
     return getAllWeekSummaries(activities, selectedTrainingBlock);
   }, [activities, selectedTrainingBlock]);
 
-  // Format time helper
-  const formatTime = (hours: number): string => {
-    const h = Math.floor(hours);
-    const m = Math.floor((hours - h) * 60);
-    if (h > 0) {
-      return `${h}h ${m}m`;
-    }
-    return `${m}m`;
-  };
-
   // Calculate average pace helper
   const calculateAveragePace = (summary: WeekSummary): string | null => {
     if (summary.totalMiles === 0 || summary.totalTime === 0) return null;
@@ -411,7 +402,7 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
                 {summary.totalTime > 0 && (
                   <div className='bg-gray-50 rounded-lg p-4'>
                     <p className='text-sm text-gray-600'>Time</p>
-                    <p className='text-2xl font-bold text-gray-900'>{formatTime(totalTimeHours)}</p>
+                    <p className='text-2xl font-bold text-gray-900'>{formatTimeFromHours(totalTimeHours)}</p>
                   </div>
                 )}
                 {averagePace !== null && (
@@ -459,17 +450,6 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
                     const miles = data.miles;
                     const timeSeconds = data.time;
 
-                    // Format time
-                    const formatTime = (seconds: number): string => {
-                      if (seconds === 0) return '0m';
-                      const h = Math.floor(seconds / 3600);
-                      const m = Math.floor((seconds % 3600) / 60);
-                      if (h > 0) {
-                        return `${h}h ${m}m`;
-                      }
-                      return `${m}m`;
-                    };
-
                     // Calculate pace (minutes:seconds per mile)
                     const calculatePace = (): string | null => {
                       if (miles === 0 || timeSeconds === 0) return null;
@@ -480,7 +460,7 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
                     };
 
                     const pace = calculatePace();
-                    const timeFormatted = formatTime(timeSeconds);
+                    const timeFormatted = formatTimeFromSecondsSimple(timeSeconds);
 
                     return (
                       <div className='bg-white border border-gray-200 rounded-lg shadow-lg p-3'>
@@ -558,7 +538,9 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
                             {summary.totalTime > 0 && (
                               <div>
                                 <p className='text-sm text-gray-600'>Total Time</p>
-                                <p className='text-2xl font-bold text-gray-900'>{formatTime(totalTimeHours)}</p>
+                                <p className='text-2xl font-bold text-gray-900'>
+                                  {formatTimeFromHours(totalTimeHours)}
+                                </p>
                               </div>
                             )}
                             {avgPace !== null && (
