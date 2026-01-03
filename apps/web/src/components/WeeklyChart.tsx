@@ -44,12 +44,13 @@ function getAvailableWeeks(activities: Activity[]): Date[] {
 }
 
 interface WeekSummary {
+  totalRuns: number;
   totalMiles: number;
   totalCalories: number;
-  totalTime: number; // in seconds
+  totalTime: number;
   heartRateSum: number;
   heartRateCount: number;
-  paceActivities: number; // count of activities with both distance and time for pace calculation
+  paceActivities: number;
 }
 
 // Get data for a specific week
@@ -76,6 +77,7 @@ function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]
 
   // Initialize summary
   const summary: WeekSummary = {
+    totalRuns: 0,
     totalMiles: 0,
     totalCalories: 0,
     totalTime: 0,
@@ -94,6 +96,7 @@ function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]
     if (activityDate >= weekStart && activityDate <= weekEnd) {
       const dayIndex = Math.floor((activityDate.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
       if (dayIndex >= 0 && dayIndex < 7) {
+        summary.totalRuns += 1;
         // Add to day miles
         if (activity.distance) {
           days[dayIndex].miles += activity.distance;
@@ -530,7 +533,11 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
                             </div>
                           </div>
 
-                          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+                          <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
+                            <div>
+                              <p className='text-sm text-gray-600'>Runs</p>
+                              <p className='text-2xl font-bold text-gray-900'>{summary.totalRuns}</p>
+                            </div>
                             <div>
                               <p className='text-sm text-gray-600'>Miles</p>
                               <p className='text-2xl font-bold text-gray-900'>{summary.totalMiles.toFixed(2)}</p>
