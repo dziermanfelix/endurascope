@@ -83,7 +83,7 @@ export function ActivityCard({ activity, onUpdate }: ActivityCardProps) {
         </div>
       ) : (
         <h3
-          className='text-lg font-bold text-gray-900 line-clamp-2 mb-2 cursor-pointer hover:text-blue-600 transition-colors'
+          className='text-lg font-bold text-gray-900 line-clamp-2 mb-1 cursor-pointer hover:text-blue-600 transition-colors'
           onClick={handleNameClick}
           title='Click to edit name'
         >

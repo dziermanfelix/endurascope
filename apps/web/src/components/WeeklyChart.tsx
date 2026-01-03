@@ -423,7 +423,7 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
                 )}
                 {summary.totalCalories > 0 && (
                   <div className='bg-gray-50 rounded-lg p-4'>
-                    <p className='text-sm text-gray-600'>Total Calories</p>
+                    <p className='text-sm text-gray-600'>Calories</p>
                     <p className='text-2xl font-bold text-gray-900'>
                       {Math.round(summary.totalCalories).toLocaleString()}
                     </p>
@@ -532,12 +532,12 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
 
                           <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
                             <div>
-                              <p className='text-sm text-gray-600'>Total Miles</p>
+                              <p className='text-sm text-gray-600'>Miles</p>
                               <p className='text-2xl font-bold text-gray-900'>{summary.totalMiles.toFixed(2)}</p>
                             </div>
                             {summary.totalTime > 0 && (
                               <div>
-                                <p className='text-sm text-gray-600'>Total Time</p>
+                                <p className='text-sm text-gray-600'>Time</p>
                                 <p className='text-2xl font-bold text-gray-900'>
                                   {formatTimeFromHours(totalTimeHours)}
                                 </p>
