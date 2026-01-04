@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Activity } from '../types/activity';
 import { TrainingBlock } from '../api/training-blocks';
 import { formatTimeFromHours, formatTimeFromSecondsSimple } from '../util/time';
+import { ArrowIcon } from './ArrowIcon';
 
 interface WeeklyChartProps {
   activities: Activity[];
@@ -355,16 +356,7 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
                   disabled={currentWeekIndex >= availableWeeks.length - 1}
                   className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 hover:cursor-pointer disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
                 >
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    strokeWidth={2}
-                    stroke='currentColor'
-                    className='w-5 h-5'
-                  >
-                    <path strokeLinecap='round' strokeLinejoin='round' d='M15.75 19.5L8.25 12l7.5-7.5' />
-                  </svg>
+                  <ArrowIcon direction='left' />
                   Previous
                 </button>
                 <span className='text-sm text-gray-500'>
@@ -376,16 +368,7 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
                   className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 hover:cursor-pointer disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
                 >
                   Next
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    strokeWidth={2}
-                    stroke='currentColor'
-                    className='w-5 h-5'
-                  >
-                    <path strokeLinecap='round' strokeLinejoin='round' d='M8.25 4.5l7.5 7.5-7.5 7.5' />
-                  </svg>
+                  <ArrowIcon direction='right' />
                 </button>
               </div>
             </div>
