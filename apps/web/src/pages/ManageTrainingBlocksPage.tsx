@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchTrainingBlocks, deleteTrainingBlock, TrainingBlock } from '../api/training-blocks';
 import { CreateTrainingBlockModal } from '../components/CreateTrainingBlockModal';
 import { EditTrainingBlockModal } from '../components/EditTrainingBlockModal';
+import CreateIcon from '../components/CreateIcon';
 
 export function ManageTrainingBlocksPage() {
   const [trainingBlocks, setTrainingBlocks] = useState<TrainingBlock[]>([]);
@@ -75,12 +76,10 @@ export function ManageTrainingBlocksPage() {
         <h2 className='text-2xl font-bold text-gray-900'>Manage Training Blocks</h2>
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className='px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors flex items-center gap-2'
+          className='px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors flex items-center gap-2 hover:cursor-pointer'
         >
-          <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4v16m8-8H4' />
-          </svg>
-          Create Training Block
+          <CreateIcon />
+          Training Block
         </button>
       </div>
 

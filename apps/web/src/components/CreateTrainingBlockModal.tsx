@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createTrainingBlock, CreateTrainingBlockDto } from '../api/training-blocks';
+import CloseIcon from './CloseIcon';
 
 interface CreateTrainingBlockModalProps {
   isOpen: boolean;
@@ -71,9 +72,7 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
               className='text-gray-400 hover:text-gray-600 transition-colors'
               disabled={loading}
             >
-              <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
-              </svg>
+              <CloseIcon />
             </button>
           </div>
 
