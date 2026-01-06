@@ -157,7 +157,6 @@ export class StravaService {
           },
         });
         const data = response.data;
-        console.log('data', data);
         if (!data || data.length === 0) break;
         currPage += 1;
         activities.push(...data);

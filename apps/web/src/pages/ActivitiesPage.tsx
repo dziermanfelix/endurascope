@@ -40,14 +40,6 @@ export function ActivitiesPage() {
       )}
 
       {!isLoading && !isError && activities.length > 0 && (
-        <div className='mb-4'>
-          <p className='text-gray-600'>
-            Showing <span className='font-semibold'>{activities.length}</span> activities
-          </p>
-        </div>
-      )}
-
-      {!isLoading && !isError && activities.length > 0 && (
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
           {activities.map((activity) => (
             <ActivityCard key={activity.id} activity={activity} onUpdate={loadActivities} />

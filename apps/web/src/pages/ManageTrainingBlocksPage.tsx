@@ -1,35 +1,17 @@
-import { useEffect, useState } from 'react';
-import { fetchTrainingBlocks, deleteTrainingBlock, TrainingBlock } from '../api/training-blocks';
+import { useState } from 'react';
+import { deleteTrainingBlock, TrainingBlock } from '../api/training-blocks';
 import { CreateTrainingBlockModal } from '../components/CreateTrainingBlockModal';
 import { EditTrainingBlockModal } from '../components/EditTrainingBlockModal';
 import CreateIcon from '../components/CreateIcon';
+import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 
 export function ManageTrainingBlocksPage() {
-  const [trainingBlocks, setTrainingBlocks] = useState<TrainingBlock[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { trainingBlocks, loadTrainingBlocks, isLoading, isError } = useTrainingBlocks();
+  const [error, setError] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<TrainingBlock | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-
-  const loadTrainingBlocks = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchTrainingBlocks();
-      setTrainingBlocks(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load training blocks');
-      console.error('Error loading training blocks:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadTrainingBlocks();
-  }, []);
 
   const handleEdit = (block: TrainingBlock) => {
     setSelectedBlock(block);
@@ -62,7 +44,7 @@ export function ManageTrainingBlocksPage() {
     return diffWeeks;
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className='flex justify-center items-center py-12'>
         <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
@@ -83,21 +65,21 @@ export function ManageTrainingBlocksPage() {
         </button>
       </div>
 
-      {error && (
+      {isError && (
         <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6'>
           <p className='font-semibold'>Error</p>
           <p>{error}</p>
         </div>
       )}
 
-      {!loading && trainingBlocks.length === 0 && (
+      {!isLoading && trainingBlocks.length === 0 && (
         <div className='bg-white rounded-lg shadow-md p-8 text-center'>
           <p className='text-gray-600 text-lg'>No training blocks found.</p>
           <p className='text-gray-500 mt-2'>Create your first training block to get started.</p>
         </div>
       )}
 
-      {!loading && trainingBlocks.length > 0 && (
+      {!isLoading && trainingBlocks.length > 0 && (
         <div className='space-y-4'>
           {trainingBlocks.map((block) => {
             const weeksRemaining = calculateWeeksRemaining(block.raceDate);

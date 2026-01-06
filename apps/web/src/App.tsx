@@ -3,6 +3,7 @@ import { ActivitiesPage } from './pages/ActivitiesPage';
 import { WeeklyChartPage } from './pages/WeeklyChartPage';
 import { ManageTrainingBlocksPage } from './pages/ManageTrainingBlocksPage';
 import { ActivitiesProvider } from './contexts/ActivitiesContext';
+import { TrainingBlocksProvider } from './contexts/TrainingBlocksContext';
 
 function Navigation() {
   const location = useLocation();
@@ -60,12 +61,14 @@ function App() {
           <Navigation />
 
           <ActivitiesProvider>
-            <Routes>
-              <Route path='/' element={<WeeklyChartPage />} />
-              <Route path='/weekly' element={<WeeklyChartPage />} />
-              <Route path='/activities' element={<ActivitiesPage />} />
-              <Route path='/training-blocks' element={<ManageTrainingBlocksPage />} />
-            </Routes>
+            <TrainingBlocksProvider>
+              <Routes>
+                <Route path='/' element={<WeeklyChartPage />} />
+                <Route path='/weekly' element={<WeeklyChartPage />} />
+                <Route path='/activities' element={<ActivitiesPage />} />
+                <Route path='/training-blocks' element={<ManageTrainingBlocksPage />} />
+              </Routes>
+            </TrainingBlocksProvider>
           </ActivitiesProvider>
         </div>
       </div>

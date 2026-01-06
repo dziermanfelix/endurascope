@@ -4,11 +4,8 @@ import { Activity } from '../types/activity';
 import { TrainingBlock } from '../api/training-blocks';
 import { formatTimeFromHours, formatTimeFromSecondsSimple } from '../util/time';
 import { ArrowIcon } from './ArrowIcon';
-
-interface WeeklyChartProps {
-  activities: Activity[];
-  trainingBlocks: TrainingBlock[];
-}
+import { useActivities } from '../contexts/ActivitiesContext';
+import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 
 interface DayData {
   day: string;
@@ -218,12 +215,27 @@ function getAllWeekSummaries(
   });
 }
 
-export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
+export function WeeklyChart() {
+  const { activities, isLoading: isActivitiesLoading, isError: isActivitiesError } = useActivities();
+  const { trainingBlocks, isLoading: isTrainingBlocksLoading, isError: isTrainingBlocksError } = useTrainingBlocks();
+
   const [activeTab, setActiveTab] = useState<'daily' | 'summary'>('daily');
   const [selectedTrainingBlockId, setSelectedTrainingBlockId] = useState<string | null>(null);
+  const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
 
   const availableWeeks = useMemo(() => getAvailableWeeks(activities), [activities]);
-  const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
+
+  const currentWeekStart = availableWeeks[currentWeekIndex] ?? null;
+
+  const weekDataResult = useMemo(() => {
+    if (!currentWeekStart) {
+      return { days: [], summary: null };
+    }
+    return getWeekData(activities, currentWeekStart);
+  }, [activities, currentWeekStart]);
+
+  const weekData = weekDataResult.days;
+  const summary = weekDataResult.summary;
 
   // Get selected training block or use the most recent one
   const selectedTrainingBlock = useMemo(() => {
@@ -249,33 +261,11 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  if (availableWeeks.length === 0 && activeTab === 'daily') {
-    return (
-      <div className='bg-white rounded-lg shadow-md p-8 text-center'>
-        <p className='text-gray-600 text-lg'>No activity data available for weekly breakdown.</p>
-      </div>
-    );
-  }
-
-  if (activeTab === 'summary' && trainingBlocks.length === 0) {
-    return (
-      <div className='bg-white rounded-lg shadow-md p-8 text-center'>
-        <p className='text-gray-600 text-lg'>
-          No training blocks available. Create a training block to view weekly summaries.
-        </p>
-      </div>
-    );
-  }
-
-  const currentWeekStart = availableWeeks[currentWeekIndex];
-  const { days: weekData, summary } = useMemo(
-    () => getWeekData(activities, currentWeekStart),
-    [activities, currentWeekStart]
-  );
-
-  const weekLabel = `${currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(
-    currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000
-  ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  const weekLabel = currentWeekStart
+    ? `${currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(
+        currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000
+      ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    : '';
 
   const goToPreviousWeek = () => {
     if (currentWeekIndex < availableWeeks.length - 1) {
@@ -289,6 +279,8 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
     }
   };
 
+  if (summary === null) return;
+
   // Calculate derived metrics for daily view
   const totalMiles = summary.totalMiles;
   const totalRuns = weekData.filter((d) => d.miles > 0).length;
@@ -296,6 +288,31 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
   const avgHeartRate = summary.heartRateCount > 0 ? summary.heartRateSum / summary.heartRateCount : null;
   const totalTimeHours = summary.totalTime / 3600;
   const averagePace = calculateAveragePace(summary);
+
+  if (isActivitiesLoading || isTrainingBlocksLoading) {
+    return (
+      <div className='flex justify-center items-center py-12'>
+        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+      </div>
+    );
+  }
+
+  if (isActivitiesError || isTrainingBlocksError) {
+    return (
+      <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>
+        <p className='font-semibold'>Error loading data</p>
+        <p>{isActivitiesError || isTrainingBlocksError}</p>
+      </div>
+    );
+  }
+
+  if (availableWeeks.length === 0 && activeTab === 'daily') {
+    return (
+      <div className='bg-white rounded-lg shadow-md p-8 text-center'>
+        <p className='text-gray-600 text-lg'>No activity data available for weekly breakdown.</p>
+      </div>
+    );
+  }
 
   return (
     <div className='space-y-6'>
@@ -329,7 +346,7 @@ export function WeeklyChart({ activities, trainingBlocks }: WeeklyChartProps) {
               className='w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
             >
               {trainingBlocks.length === 0 ? (
-                <option value=''>No training blocks available</option>
+                <option value=''>None</option>
               ) : (
                 trainingBlocks.map((tb) => (
                   <option key={tb.id} value={tb.id}>
