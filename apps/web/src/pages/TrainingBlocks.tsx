@@ -5,7 +5,7 @@ import { EditTrainingBlockModal } from '../components/EditTrainingBlockModal';
 import CreateIcon from '../components/CreateIcon';
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 
-export function ManageTrainingBlocksPage() {
+export function TrainingBlocks() {
   const { trainingBlocks, loadTrainingBlocks, isLoading, isError } = useTrainingBlocks();
   const [error, setError] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

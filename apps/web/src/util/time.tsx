@@ -31,6 +31,13 @@ export const formatDate = (dateString: string | null): string => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+export const calculatePace = (miles: number, timeSeconds: number): string | null => {
+  if (miles === 0 || timeSeconds === 0) return null;
+  const secondsPerMile = timeSeconds / miles;
+  const minutes = Math.floor(secondsPerMile / 60);
+  const seconds = Math.floor(secondsPerMile % 60);
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
 
 export const formatPace = (averageSpeed: number | null): string | null => {
   if (!averageSpeed) return null;

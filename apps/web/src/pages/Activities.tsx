@@ -1,7 +1,7 @@
 import { ActivityCard } from '../components/ActivityCard';
 import { useActivities } from '../contexts/ActivitiesContext';
 
-export function ActivitiesPage() {
+export function Activities() {
   const { activities, loadActivities, isLoading, isError, refetch, isRefetching } = useActivities();
 
   return (

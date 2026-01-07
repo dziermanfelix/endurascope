@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { ActivitiesPage } from './pages/ActivitiesPage';
-import { WeeklyChartPage } from './pages/WeeklyChartPage';
-import { ManageTrainingBlocksPage } from './pages/ManageTrainingBlocksPage';
+import { Activities } from './pages/Activities';
+import { Weekly } from './pages/Weekly';
+import { TrainingBlocks } from './pages/TrainingBlocks';
 import { ActivitiesProvider } from './contexts/ActivitiesContext';
 import { TrainingBlocksProvider } from './contexts/TrainingBlocksContext';
 
@@ -9,7 +9,7 @@ function Navigation() {
   const location = useLocation();
 
   return (
-    <nav className='bg-white border-b border-gray-200 mb-8'>
+    <nav className='bg-white border-b border-gray-200'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='flex space-x-8'>
           <Link
@@ -20,7 +20,7 @@ function Navigation() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            Weekly Breakdown
+            Weekly
           </Link>
           <Link
             to='/activities'
@@ -51,25 +51,21 @@ function Navigation() {
 function App() {
   return (
     <Router>
-      <div className='min-h-screen bg-gray-50'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-          <header className='mb-8'>
-            <h1 className='text-4xl font-bold text-gray-900 mb-2'>Endurascope</h1>
-            <p className='text-gray-600'>Your Strava activities</p>
-          </header>
-
-          <Navigation />
-
-          <ActivitiesProvider>
-            <TrainingBlocksProvider>
-              <Routes>
-                <Route path='/' element={<WeeklyChartPage />} />
-                <Route path='/weekly' element={<WeeklyChartPage />} />
-                <Route path='/activities' element={<ActivitiesPage />} />
-                <Route path='/training-blocks' element={<ManageTrainingBlocksPage />} />
-              </Routes>
-            </TrainingBlocksProvider>
-          </ActivitiesProvider>
+      <div className='h-screen flex flex-col bg-gray-50'>
+        <Navigation />
+        <div className='flex-1 min-h-0 overflow-y-auto'>
+          <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+            <ActivitiesProvider>
+              <TrainingBlocksProvider>
+                <Routes>
+                  <Route path='/' element={<Weekly />} />
+                  <Route path='/weekly' element={<Weekly />} />
+                  <Route path='/activities' element={<Activities />} />
+                  <Route path='/training-blocks' element={<TrainingBlocks />} />
+                </Routes>
+              </TrainingBlocksProvider>
+            </ActivitiesProvider>
+          </div>
         </div>
       </div>
     </Router>
