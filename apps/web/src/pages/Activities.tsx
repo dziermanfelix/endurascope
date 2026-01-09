@@ -1,8 +1,22 @@
+import { useState, useEffect } from 'react';
 import { ActivityCard } from '../components/ActivityCard';
 import { useActivities } from '../contexts/ActivitiesContext';
+import { Activity } from '../types/activity';
+import { ActivityModal } from '../components/ActivityModal';
 
 export function Activities() {
   const { activities, loadActivities, isLoading, isError, refetch, isRefetching } = useActivities();
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedActivity(null);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
 
   return (
     <>
@@ -40,12 +54,20 @@ export function Activities() {
       )}
 
       {!isLoading && !isError && activities.length > 0 && (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch'>
           {activities.map((activity) => (
-            <ActivityCard key={activity.id} activity={activity} onUpdate={loadActivities} />
+            <ActivityCard
+              key={activity.id}
+              activity={activity}
+              onUpdate={loadActivities}
+              onCardClick={(activity) => setSelectedActivity(activity)}
+            />
           ))}
         </div>
       )}
+
+      {/* Activity Detail Modal */}
+      {selectedActivity && <ActivityModal activity={selectedActivity} onClose={() => setSelectedActivity(null)} />}
     </>
   );
 }
