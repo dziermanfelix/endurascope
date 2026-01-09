@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { Activity } from '../types/activity';
 import { formatDate, formatPace, formatTimeFromSecondsSimple } from '../util/time';
 import CloseIcon from '../components/CloseIcon';
+import { updateActivityName } from '../api/activities';
+import { useActivities } from '../contexts/ActivitiesContext';
 
 interface ActivityModalProps {
   activity: Activity;
@@ -8,6 +11,63 @@ interface ActivityModalProps {
 }
 
 export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(activity.name || '');
+  const [nameBeforeEdit, setNameBeforeEdit] = useState(editedName);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editMessage, setEditMessage] = useState('');
+
+  const { loadActivities } = useActivities();
+
+  const handleNameClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setNameBeforeEdit(editedName);
+    setIsEditing(true);
+    setEditMessage('');
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditedName(e.target.value);
+  };
+
+  const handleNameSubmit = async () => {
+    if (nameBeforeEdit === editedName) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSaving(true);
+    setEditMessage('Saving name...');
+    try {
+      await updateActivityName(activity.stravaId.toString(), editedName.trim());
+      setIsEditing(false);
+      setEditedName(editedName.trim());
+      setEditMessage('Name saved!');
+      await loadActivities();
+    } catch (error) {
+      setEditMessage('Failed to save.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleNameCancel = () => {
+    setEditedName(nameBeforeEdit);
+    setIsEditing(false);
+    setEditMessage('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleNameSubmit();
+    } else if (e.key === 'Escape') {
+      if (isEditing) {
+        e.stopPropagation();
+        handleNameCancel();
+      }
+    }
+  };
+
   const pace = formatPace(activity.averageSpeed);
   const averageSpeedMph = activity.averageSpeed !== null ? (activity.averageSpeed * 2.23694).toFixed(1) : null;
   const elevationGainFeet =
@@ -17,19 +77,35 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
     <div className='fixed inset-0 z-50 flex items-center justify-center p-4' onClick={onClose}>
       {/* Backdrop */}
       <div className='absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm' />
-
       {/* Modal Content */}
       <div
-        className='relative bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'
+        className='bg-white relative rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className='sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-start justify-between rounded-t-xl'>
+        <div className='sticky top-0 flex items-start justify-between rounded-xl p-3' onClick={handleNameClick}>
           <div className='flex-1'>
             {activity.startDateLocal && (
               <div className='text-sm text-gray-500 mb-2'>{formatDate(activity.startDateLocal)}</div>
             )}
-            <h2 className='text-2xl font-bold text-gray-900'>{activity.name || 'Unnamed Activity'}</h2>
+            <div className='text-lg font-bold text-gray-900 hover:shadow-md hover:border-gray-300 hover:cursor-pointer shadow-sm border border-gray-200 transition-colors rounded p-2'>
+              {isEditing ? (
+                <input
+                  type='text'
+                  value={editedName}
+                  onChange={handleNameChange}
+                  onBlur={handleNameSubmit}
+                  onKeyDown={handleKeyDown}
+                  disabled={isSaving}
+                  className='w-full outline-none border-none p-0 m-0'
+                  autoFocus
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <h3>{editedName || 'Unnamed Activity'}</h3>
+              )}
+            </div>
+            {editMessage && <div className='text-sm text-gray-500 mb-2'>{editMessage}</div>}
           </div>
           <button
             onClick={onClose}
