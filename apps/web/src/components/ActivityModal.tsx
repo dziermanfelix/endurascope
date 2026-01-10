@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Activity } from '../types/activity';
 import { formatDate, formatPace, formatTimeFromSecondsSimple } from '../util/time';
 import CloseIcon from '../components/CloseIcon';
@@ -18,6 +18,17 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
   const [editMessage, setEditMessage] = useState('');
 
   const { loadActivities } = useActivities();
+
+  // Handle Escape key to close modal when not editing
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isEditing) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isEditing, onClose]);
 
   const handleNameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -61,9 +72,11 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
     if (e.key === 'Enter') {
       handleNameSubmit();
     } else if (e.key === 'Escape') {
+      e.stopPropagation();
       if (isEditing) {
-        e.stopPropagation();
         handleNameCancel();
+      } else {
+        onClose();
       }
     }
   };
@@ -108,7 +121,10 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
             {editMessage && <div className='text-sm text-gray-500 mb-2'>{editMessage}</div>}
           </div>
           <button
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             className='ml-4 text-gray-400 hover:text-gray-600 transition-colors'
             aria-label='Close'
           >

@@ -3,7 +3,6 @@ import { formatPace, formatTimeFromSecondsSimple } from '../util/time';
 
 interface ActivityCardProps {
   activity: Activity;
-  onUpdate?: () => void;
   onCardClick?: (activity: Activity) => void;
 }
 
