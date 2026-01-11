@@ -1,3 +1,5 @@
+import { WeekSummary } from '../pages/Weekly';
+
 export const formatTimeFromSeconds = (seconds: number | null): string => {
   if (!seconds) return 'N/A';
   const hours = Math.floor(seconds / 3600);
@@ -29,6 +31,14 @@ export const formatDate = (dateString: string | null): string => {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+export const calculateAveragePaceFromSummary = (summary: WeekSummary): string | null => {
+  if (summary.totalMiles === 0 || summary.totalTime === 0) return null;
+  const secondsPerMile = summary.totalTime / summary.totalMiles;
+  const minutes = Math.floor(secondsPerMile / 60);
+  const seconds = Math.floor(secondsPerMile % 60);
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
 export const calculatePace = (miles: number, timeSeconds: number): string | null => {

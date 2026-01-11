@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Activity } from '../types/activity';
-import { formatTimeFromHours } from '../util/time';
+import { calculateAveragePaceFromSummary, formatTimeFromHours } from '../util/time';
 import { useActivities } from '../contexts/ActivitiesContext';
 import { ArrowIcon } from '../components/ArrowIcon';
 import WeeklyChart from '../components/WeeklyChart';
@@ -71,7 +71,6 @@ function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]
     });
   }
 
-  // Initialize summary
   const summary: WeekSummary = {
     totalRuns: 0,
     totalMiles: 0,
@@ -82,7 +81,6 @@ function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]
     paceActivities: 0,
   };
 
-  // Process activities for the week
   activities.forEach((activity) => {
     if (!activity.startDateLocal) return;
 
@@ -167,15 +165,6 @@ export function Weekly() {
     return getWeeklySummaries(activities);
   }, [activities]);
 
-  // Calculate average pace helper
-  const calculateAveragePace = (summary: WeekSummary): string | null => {
-    if (summary.totalMiles === 0 || summary.totalTime === 0) return null;
-    const secondsPerMile = summary.totalTime / summary.totalMiles;
-    const minutes = Math.floor(secondsPerMile / 60);
-    const seconds = Math.floor(secondsPerMile % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
   const weekLabel = currentWeekStart
     ? `${currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(
         currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000
@@ -202,7 +191,7 @@ export function Weekly() {
   const avgMilesPerDay = totalRuns > 0 ? totalMiles / 7 : 0;
   const avgHeartRate = summary.heartRateCount > 0 ? summary.heartRateSum / summary.heartRateCount : null;
   const totalTimeHours = summary.totalTime / 3600;
-  const averagePace = calculateAveragePace(summary);
+  const averagePace = calculateAveragePaceFromSummary(summary);
 
   if (isActivitiesLoading) {
     return (
@@ -358,7 +347,7 @@ export function Weekly() {
                     const avgHeartRate =
                       summary.heartRateCount > 0 ? summary.heartRateSum / summary.heartRateCount : null;
                     const totalTimeHours = summary.totalTime / 3600;
-                    const avgPace = calculateAveragePace(summary);
+                    const avgPace = calculateAveragePaceFromSummary(summary);
 
                     return (
                       <div key={weekNumber} className='bg-gray-50 rounded-lg p-6 border border-gray-200'>
