@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Activity } from '../types/activity';
-import { formatDate, formatPace, formatTimeFromSecondsSimple } from '../util/time';
+import { formatDate, formatPace, formatTimeFromSeconds } from '../util/time';
 import CloseIcon from '../components/CloseIcon';
 import { updateActivityName } from '../api/activities';
 import { useActivities } from '../contexts/ActivitiesContext';
@@ -162,7 +162,7 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
 
             {activity.movingTime !== null ? (
               <div className='text-center'>
-                <p className='text-4xl font-bold text-gray-900'>{formatTimeFromSecondsSimple(activity.movingTime)}</p>
+                <p className='text-4xl font-bold text-gray-900'>{formatTimeFromSeconds(activity.movingTime)}</p>
                 <p className='text-sm text-gray-500 mt-1'>moving time</p>
               </div>
             ) : (
@@ -187,9 +187,7 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
             {activity.elapsedTime !== null ? (
               <div className='bg-gray-50 rounded-lg p-4'>
                 <p className='text-xs text-gray-500 mb-1'>Elapsed Time</p>
-                <p className='text-xl font-semibold text-gray-900'>
-                  {formatTimeFromSecondsSimple(activity.elapsedTime)}
-                </p>
+                <p className='text-xl font-semibold text-gray-900'>{formatTimeFromSeconds(activity.elapsedTime)}</p>
               </div>
             ) : null}
 

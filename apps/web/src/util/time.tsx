@@ -1,21 +1,17 @@
 import { WeekSummary } from '../pages/Weekly';
 
-export const formatTimeFromSeconds = (seconds: number | null): string => {
-  if (!seconds) return 'N/A';
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
-
-export const formatTimeFromSecondsSimple = (seconds: number): string => {
-  if (seconds === 0) return '0m';
+export const formatTimeFromSeconds = (seconds: number): string => {
+  if (seconds === 0) return '0s';
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
   if (h > 0) {
-    return `${h}h ${m}m`;
+    return `${h}h ${m}m ${s}s`;
   }
-  return `${m}m`;
+  if (m > 0) {
+    return `${m}m ${s}s`;
+  }
+  return `${s}s`;
 };
 
 export const formatTimeFromHours = (hours: number): string => {

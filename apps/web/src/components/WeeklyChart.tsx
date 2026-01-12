@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { calculatePace, formatTimeFromSecondsSimple } from '../util/time';
+import { calculatePace, formatTimeFromSeconds } from '../util/time';
 import { DayData } from '../pages/Weekly';
 
 interface WeeklyChartProps {
@@ -24,7 +24,7 @@ const WeeklyChart = ({ weekData }: WeeklyChartProps) => {
               const timeSeconds = data.time;
 
               const pace = calculatePace(miles, timeSeconds);
-              const timeFormatted = formatTimeFromSecondsSimple(timeSeconds);
+              const timeFormatted = formatTimeFromSeconds(timeSeconds);
 
               return (
                 <div className='bg-white border border-gray-200 rounded-lg shadow-lg p-3'>
