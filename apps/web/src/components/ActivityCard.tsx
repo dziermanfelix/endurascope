@@ -49,10 +49,10 @@ export function ActivityCard({ activity, onCardClick }: ActivityCardProps) {
           </div>
         )}
 
-        {activity.movingTime !== null ? (
+        {activity.elapsedTime !== null ? (
           <div className='flex items-baseline gap-1 justify-center'>
             <p className='text-2xl font-bold text-gray-900 leading-tight whitespace-nowrap'>
-              {formatTimeFromSeconds(activity.movingTime)}
+              {formatTimeFromSeconds(activity.elapsedTime)}
             </p>
             <p className='text-xs text-gray-500'>time</p>
           </div>

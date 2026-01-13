@@ -98,9 +98,9 @@ function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]
         }
 
         // Add to day time
-        if (activity.movingTime) {
-          days[dayIndex].time += activity.movingTime;
-          summary.totalTime += activity.movingTime;
+        if (activity.elapsedTime) {
+          days[dayIndex].time += activity.elapsedTime;
+          summary.totalTime += activity.elapsedTime;
         }
 
         // Add to weekly totals
@@ -115,7 +115,7 @@ function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]
         }
 
         // Track activities with both distance and time for pace calculation
-        if (activity.distance && activity.distance > 0 && activity.movingTime && activity.movingTime > 0) {
+        if (activity.distance && activity.distance > 0 && activity.elapsedTime && activity.elapsedTime > 0) {
           summary.paceActivities += 1;
         }
       }

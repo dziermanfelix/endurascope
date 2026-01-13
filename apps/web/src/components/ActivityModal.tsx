@@ -160,10 +160,10 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
               </div>
             )}
 
-            {activity.movingTime !== null ? (
+            {activity.elapsedTime !== null ? (
               <div className='text-center'>
-                <p className='text-4xl font-bold text-gray-900'>{formatTimeFromSeconds(activity.movingTime)}</p>
-                <p className='text-sm text-gray-500 mt-1'>moving time</p>
+                <p className='text-4xl font-bold text-gray-900'>{formatTimeFromSeconds(activity.elapsedTime)}</p>
+                <p className='text-sm text-gray-500 mt-1'>elapsed time</p>
               </div>
             ) : (
               <div className='text-center'>
@@ -183,11 +183,11 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
               </div>
             ) : null}
 
-            {/* Elapsed time */}
-            {activity.elapsedTime !== null ? (
+            {/* Moving time */}
+            {activity.movingTime !== null ? (
               <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-xs text-gray-500 mb-1'>Elapsed Time</p>
-                <p className='text-xl font-semibold text-gray-900'>{formatTimeFromSeconds(activity.elapsedTime)}</p>
+                <p className='text-xs text-gray-500 mb-1'>Moving Time</p>
+                <p className='text-xl font-semibold text-gray-900'>{formatTimeFromSeconds(activity.movingTime)}</p>
               </div>
             ) : null}
 
