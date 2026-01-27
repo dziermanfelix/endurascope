@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Activities } from './pages/Activities';
 import { Weekly } from './pages/Weekly';
@@ -48,9 +49,21 @@ function Navigation() {
   );
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const el = document.querySelector('.overflow-y-auto');
+    el?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <div className='h-screen flex flex-col bg-gray-50'>
         <Navigation />
         <div className='flex-1 min-h-0 overflow-y-auto'>
