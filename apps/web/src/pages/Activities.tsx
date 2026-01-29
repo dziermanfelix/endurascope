@@ -3,10 +3,17 @@ import { ActivityCard } from '../components/ActivityCard';
 import { useActivities } from '../contexts/ActivitiesContext';
 import { Activity } from '../types/activity';
 import { ActivityModal } from '../components/ActivityModal';
+import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 
 export function Activities() {
   const { activities, isLoading, isError, refetch, isRefetching } = useActivities();
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [selectedTrainingBlockId, setSelectedTrainingBlockId] = useState<string | null>(null);
+  const { trainingBlocks } = useTrainingBlocks();
+
+  const filteredActivities = selectedTrainingBlockId
+    ? activities.filter((activity) => activity.name?.toLowerCase().startsWith(selectedTrainingBlockId.toLowerCase()))
+    : activities;
 
   return (
     <>
@@ -45,7 +52,28 @@ export function Activities() {
 
       {!isLoading && !isError && activities.length > 0 && (
         <div className='grid grid-cols-1 gap-4 items-stretch'>
-          {activities.map((activity) => (
+          <div className='w-1/4 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer'>
+            <select
+              className='w-full'
+              value={selectedTrainingBlockId ?? ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSelectedTrainingBlockId(value === '' ? null : value);
+              }}
+            >
+              <option value=''>All Training Blocks</option>
+              {trainingBlocks.length === 0 ? (
+                <option value=''>None</option>
+              ) : (
+                trainingBlocks.map((tb) => (
+                  <option key={tb.id} value={tb.identifier}>
+                    {tb.identifier}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+          {filteredActivities.map((activity) => (
             <ActivityCard
               key={activity.id}
               activity={activity}
