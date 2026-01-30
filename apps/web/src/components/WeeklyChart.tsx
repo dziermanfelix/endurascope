@@ -9,7 +9,6 @@ interface WeeklyChartProps {
 const WeeklyChart = ({ weekData }: WeeklyChartProps) => {
   return (
     <>
-      {/* Bar Chart */}
       <ResponsiveContainer width='100%' height={400}>
         <BarChart data={weekData}>
           <CartesianGrid strokeDasharray='3 3' />

@@ -126,7 +126,7 @@ function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]
 }
 
 function getWeeklySummaries(
-  activities: Activity[]
+  activities: Activity[],
 ): Array<{ weekStart: Date; weekNumber: number; summary: WeekSummary }> {
   const weeks = getAvailableWeeks(activities);
   const numWeeks = weeks.length;
@@ -167,7 +167,7 @@ export function Weekly() {
 
   const weekLabel = currentWeekStart
     ? `${currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(
-        currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000
+        currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000,
       ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
     : '';
 
@@ -224,7 +224,6 @@ export function Weekly() {
         <h2 className='text-2xl font-bold text-gray-900'>Weekly Training</h2>
       </div>
       <div className='space-y-6'>
-        {/* Tabs */}
         <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6 '>
           <div className='flex border-b border-gray-200 mb-4'>
             <button
@@ -251,7 +250,6 @@ export function Weekly() {
 
           {activeTab === 'weekly' && (
             <>
-              {/* Week Navigation */}
               <div className='flex items-center justify-between mb-6'>
                 <div>
                   <p className='text-gray-600'>{weekLabel}</p>
@@ -350,39 +348,39 @@ export function Weekly() {
                     const avgPace = calculateAveragePaceFromSummary(summary);
 
                     return (
-                      <div key={weekNumber} className='bg-gray-50 rounded-lg p-6 border border-gray-200'>
-                        <div className='flex items-center justify-between mb-4'>
+                      <div key={weekNumber} className='bg-gray-50 rounded-lg p-4 border border-gray-200'>
+                        <div className='flex items-center justify-between mb-2'>
                           <div>
-                            <h4 className='text-lg font-semibold text-gray-900'>Week {weekNumber}</h4>
+                            <h4 className='font-semibold text-gray-900'>Week {weekNumber}</h4>
                             <p className='text-sm text-gray-600'>{weekLabel}</p>
                           </div>
                         </div>
 
-                        <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
+                        <div className='grid sm:grid-cols-2 md:grid-cols-6 gap-1'>
                           <div>
                             <p className='text-sm text-gray-600'>Runs</p>
-                            <p className='text-2xl font-bold text-gray-900'>{summary.totalRuns}</p>
+                            <p className='font-bold text-gray-900'>{summary.totalRuns}</p>
                           </div>
                           <div>
                             <p className='text-sm text-gray-600'>Miles</p>
-                            <p className='text-2xl font-bold text-gray-900'>{summary.totalMiles.toFixed(2)}</p>
+                            <p className='font-bold text-gray-900'>{summary.totalMiles.toFixed(2)}</p>
                           </div>
                           {summary.totalTime > 0 && (
                             <div>
                               <p className='text-sm text-gray-600'>Time</p>
-                              <p className='text-2xl font-bold text-gray-900'>{formatTimeFromHours(totalTimeHours)}</p>
+                              <p className='font-bold text-gray-900'>{formatTimeFromHours(totalTimeHours)}</p>
                             </div>
                           )}
                           {avgPace !== null && (
                             <div>
                               <p className='text-sm text-gray-600'>Avg Pace</p>
-                              <p className='text-2xl font-bold text-gray-900'>{avgPace} /mi</p>
+                              <p className='font-bold text-gray-900'>{avgPace} /mi</p>
                             </div>
                           )}
                           {summary.totalCalories > 0 && (
                             <div>
                               <p className='text-sm text-gray-600'>Calories</p>
-                              <p className='text-2xl font-bold text-gray-900'>
+                              <p className='font-bold text-gray-900'>
                                 {Math.round(summary.totalCalories).toLocaleString()}
                               </p>
                             </div>
@@ -390,7 +388,7 @@ export function Weekly() {
                           {avgHeartRate !== null && (
                             <div>
                               <p className='text-sm text-gray-600'>Avg Heart Rate</p>
-                              <p className='text-2xl font-bold text-gray-900'>{Math.round(avgHeartRate)} bpm</p>
+                              <p className='font-bold text-gray-900'>{Math.round(avgHeartRate)} bpm</p>
                             </div>
                           )}
                         </div>
