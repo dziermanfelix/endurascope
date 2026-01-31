@@ -19,15 +19,23 @@ export function Activities() {
     <>
       <div className='flex justify-between items-center mb-6'>
         <h2 className='text-2xl font-bold text-gray-900'>Activities</h2>
-        <button
-          onClick={async () => {
-            await refetch();
-          }}
-          disabled={isRefetching || isLoading}
-          className='bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200 flex items-center gap-2'
-        >
-          {isRefetching ? 'Refetching...' : 'Refetch'}
-        </button>
+        <div className='w-1/4 min-w-[180px]'>
+          <select
+            className='w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer'
+            value={selectedTrainingBlockId ?? ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSelectedTrainingBlockId(value === '' ? null : value);
+            }}
+          >
+            <option value=''>All Training Blocks</option>
+            {trainingBlocks.map((tb) => (
+              <option key={tb.id} value={tb.identifier}>
+                {tb.identifier}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {isLoading && (
@@ -52,23 +60,6 @@ export function Activities() {
 
       {!isLoading && !isError && activities.length > 0 && (
         <div className='grid grid-cols-1 gap-2 items-stretch'>
-          <div className='w-1/4 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer'>
-            <select
-              className='w-full'
-              value={selectedTrainingBlockId ?? ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSelectedTrainingBlockId(value === '' ? null : value);
-              }}
-            >
-              <option value=''>All Training Blocks</option>
-              {trainingBlocks.map((tb) => (
-                <option key={tb.id} value={tb.identifier}>
-                  {tb.identifier}
-                </option>
-              ))}
-            </select>
-          </div>
           {filteredActivities.map((activity) => (
             <ActivityCard
               key={activity.id}
@@ -76,6 +67,18 @@ export function Activities() {
               onCardClick={(activity) => setSelectedActivity(activity)}
             />
           ))}
+        </div>
+      )}
+
+      {!isLoading && !isError && (
+        <div className='mt-8 flex justify-center'>
+          <button
+            onClick={async () => await refetch()}
+            disabled={isRefetching}
+            className='bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200'
+          >
+            {isRefetching ? 'Refetching...' : 'Refetch from Strava'}
+          </button>
         </div>
       )}
 

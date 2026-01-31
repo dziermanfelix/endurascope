@@ -35,7 +35,6 @@ export function Weekly() {
 
   const displayedWeeks = useMemo(() => {
     if (!selectedBlock) return availableWeeks;
-    // Use UTC date parts so "2025-01-06T00:00:00.000Z" → Jan 6 at midnight local (preserve the stored day)
     const startDate = new Date(selectedBlock.startDate);
     const startLocal = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate());
     const blockStartWeek = getWeekStart(startLocal);
