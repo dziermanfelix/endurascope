@@ -11,7 +11,6 @@ export class TrainingBlocksController {
   @Post()
   async create(@Body() createTrainingBlockDto: CreateTrainingBlockDto) {
     try {
-      // Validate required fields
       if (!createTrainingBlockDto.raceName || !createTrainingBlockDto.raceName.trim()) {
         throw new HttpException('Race name is required', HttpStatus.BAD_REQUEST);
       }
@@ -23,9 +22,6 @@ export class TrainingBlocksController {
       }
       if (!createTrainingBlockDto.startDate) {
         throw new HttpException('Start date is required', HttpStatus.BAD_REQUEST);
-      }
-      if (!createTrainingBlockDto.durationWeeks || createTrainingBlockDto.durationWeeks <= 0) {
-        throw new HttpException('Duration weeks must be greater than 0', HttpStatus.BAD_REQUEST);
       }
 
       // Validate dates

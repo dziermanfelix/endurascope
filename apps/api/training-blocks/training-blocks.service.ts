@@ -7,17 +7,24 @@ export class TrainingBlocksService {
   constructor(private prisma: PrismaService) {}
 
   async create(createTrainingBlockDto: CreateTrainingBlockDto) {
-    // Convert date strings to Date objects if needed
+    const raceDate =
+      createTrainingBlockDto.raceDate instanceof Date
+        ? createTrainingBlockDto.raceDate
+        : new Date(createTrainingBlockDto.raceDate);
+    const startDate =
+      createTrainingBlockDto.startDate instanceof Date
+        ? createTrainingBlockDto.startDate
+        : new Date(createTrainingBlockDto.startDate);
+
+    const durationWeeks = Math.ceil(
+      (raceDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000),
+    );
+
     const data = {
       ...createTrainingBlockDto,
-      raceDate:
-        createTrainingBlockDto.raceDate instanceof Date
-          ? createTrainingBlockDto.raceDate
-          : new Date(createTrainingBlockDto.raceDate),
-      startDate:
-        createTrainingBlockDto.startDate instanceof Date
-          ? createTrainingBlockDto.startDate
-          : new Date(createTrainingBlockDto.startDate),
+      raceDate,
+      startDate,
+      durationWeeks,
     };
 
     return this.prisma.trainingBlock.create({
@@ -40,8 +47,7 @@ export class TrainingBlocksService {
   }
 
   async update(id: string, updateTrainingBlockDto: UpdateTrainingBlockDto) {
-    // Convert date strings to Date objects if needed
-    const data: any = { ...updateTrainingBlockDto };
+    const data: Record<string, unknown> = { ...updateTrainingBlockDto };
 
     if (updateTrainingBlockDto.raceDate) {
       data.raceDate =
@@ -57,9 +63,18 @@ export class TrainingBlocksService {
           : new Date(updateTrainingBlockDto.startDate);
     }
 
+    const block = await this.prisma.trainingBlock.findUnique({ where: { id } });
+    if (block && (data.raceDate !== undefined || data.startDate !== undefined)) {
+      const raceDate = (data.raceDate as Date) ?? block.raceDate;
+      const startDate = (data.startDate as Date) ?? block.startDate;
+      data.durationWeeks = Math.ceil(
+        (raceDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000),
+      );
+    }
+
     return this.prisma.trainingBlock.update({
       where: { id },
-      data,
+      data: data as Parameters<PrismaService['trainingBlock']['update']>[0]['data'],
     });
   }
 

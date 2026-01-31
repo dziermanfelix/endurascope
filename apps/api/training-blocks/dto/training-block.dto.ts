@@ -3,7 +3,6 @@ export class CreateTrainingBlockDto {
   identifier: string;
   raceDate: Date;
   startDate: Date;
-  durationWeeks: number;
 }
 
 export class UpdateTrainingBlockDto {
@@ -11,5 +10,4 @@ export class UpdateTrainingBlockDto {
   identifier?: string;
   raceDate?: Date;
   startDate?: Date;
-  durationWeeks?: number;
 }

@@ -14,7 +14,6 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
     identifier: '',
     raceDate: new Date(),
     startDate: new Date(),
-    durationWeeks: 12,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +33,6 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
         identifier: '',
         raceDate: new Date(),
         startDate: new Date(),
-        durationWeeks: 12,
       });
       onSuccess?.();
       onClose();
@@ -150,25 +148,6 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
                 required
                 disabled={loading}
               />
-            </div>
-
-            {/* Duration Weeks */}
-            <div>
-              <label htmlFor='durationWeeks' className='block text-sm font-medium text-gray-700 mb-1'>
-                Duration (weeks) *
-              </label>
-              <input
-                type='number'
-                id='durationWeeks'
-                value={formData.durationWeeks}
-                onChange={(e) => handleChange('durationWeeks', parseInt(e.target.value))}
-                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
-                min='1'
-                max='52'
-                required
-                disabled={loading}
-              />
-              <p className='mt-1 text-xs text-gray-500'>Number of weeks for this training block</p>
             </div>
 
             {/* Buttons */}

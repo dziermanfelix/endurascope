@@ -14,7 +14,6 @@ export interface CreateTrainingBlockDto {
   identifier: string;
   raceDate: Date;
   startDate: Date;
-  durationWeeks: number;
 }
 
 export interface UpdateTrainingBlockDto {
@@ -22,7 +21,6 @@ export interface UpdateTrainingBlockDto {
   identifier?: string;
   raceDate?: Date;
   startDate?: Date;
-  durationWeeks?: number;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
