@@ -279,8 +279,7 @@ export function Weekly() {
 
               {/* Summary Stats */}
               <div className='space-y-4 mb-6'>
-                {/* First row: Runs, Miles, Time, Avg Pace */}
-                <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+                <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
                   <div className='bg-gray-50 rounded-lg p-4'>
                     <p className='text-sm text-gray-600'>Runs</p>
                     <p className='text-2xl font-bold text-gray-900'>{totalRuns}</p>
@@ -303,7 +302,6 @@ export function Weekly() {
                   )}
                 </div>
 
-                {/* Second row: Total Calories, Avg Heart Rate, Miles per Day */}
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
                   {avgHeartRate !== null && (
                     <div className='bg-gray-50 rounded-lg p-4'>
@@ -314,9 +312,7 @@ export function Weekly() {
                   {summary.totalCalories > 0 && (
                     <div className='bg-gray-50 rounded-lg p-4'>
                       <p className='text-sm text-gray-600'>Calories</p>
-                      <p className='text-2xl font-bold text-gray-900'>
-                        {Math.round(summary.totalCalories).toLocaleString()}
-                      </p>
+                      <p className='text-2xl font-bold text-gray-900'>{Math.round(summary.totalCalories)}</p>
                     </div>
                   )}
                   <div className='bg-gray-50 rounded-lg p-4'>

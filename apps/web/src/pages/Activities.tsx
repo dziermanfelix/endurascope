@@ -51,7 +51,7 @@ export function Activities() {
       )}
 
       {!isLoading && !isError && activities.length > 0 && (
-        <div className='grid grid-cols-1 gap-4 items-stretch'>
+        <div className='grid grid-cols-1 gap-2 items-stretch'>
           <div className='w-1/4 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer'>
             <select
               className='w-full'
@@ -62,15 +62,11 @@ export function Activities() {
               }}
             >
               <option value=''>All Training Blocks</option>
-              {trainingBlocks.length === 0 ? (
-                <option value=''>None</option>
-              ) : (
-                trainingBlocks.map((tb) => (
-                  <option key={tb.id} value={tb.identifier}>
-                    {tb.identifier}
-                  </option>
-                ))
-              )}
+              {trainingBlocks.map((tb) => (
+                <option key={tb.id} value={tb.identifier}>
+                  {tb.identifier}
+                </option>
+              ))}
             </select>
           </div>
           {filteredActivities.map((activity) => (
