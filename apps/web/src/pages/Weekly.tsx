@@ -1,169 +1,25 @@
-import { useState, useMemo } from 'react';
-import { Activity } from '../types/activity';
+import { useState } from 'react';
 import { calculateAveragePaceFromSummary, formatTimeFromHours } from '../util/time';
 import { useActivities } from '../contexts/ActivitiesContext';
 import { ArrowIcon } from '../components/ArrowIcon';
 import WeeklyChart from '../components/WeeklyChart';
 
-export interface DayData {
-  day: string;
-  dayLabel: string;
-  date: Date;
-  miles: number;
-  time: number;
-}
-
-export interface WeekSummary {
-  totalRuns: number;
-  totalMiles: number;
-  totalCalories: number;
-  totalTime: number;
-  heartRateSum: number;
-  heartRateCount: number;
-  paceActivities: number;
-}
-
-// Get the start of the week (Monday) for a given date
-function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-// Get all available week starts from activities
-function getAvailableWeeks(activities: Activity[]): Date[] {
-  const weekStarts = new Set<string>();
-
-  activities.forEach((activity) => {
-    if (!activity.startDateLocal) return;
-    const date = new Date(activity.startDateLocal);
-    const weekStart = getWeekStart(date);
-    weekStarts.add(weekStart.toISOString());
-  });
-
-  return Array.from(weekStarts)
-    .map((iso) => new Date(iso))
-    .sort((a, b) => b.getTime() - a.getTime()); // Most recent first
-}
-
-// Get data for a specific week
-function getWeekData(activities: Activity[], weekStart: Date): { days: DayData[]; summary: WeekSummary } {
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  weekEnd.setHours(23, 59, 59, 999);
-
-  // Initialize all 7 days
-  const days: DayData[] = [];
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(weekStart);
-    date.setDate(weekStart.getDate() + i);
-    const dayOfWeek = date.getDay();
-    days.push({
-      day: dayNames[dayOfWeek],
-      dayLabel: `${dayNames[dayOfWeek]} ${date.getDate()}`,
-      date: new Date(date),
-      miles: 0,
-      time: 0,
-    });
-  }
-
-  const summary: WeekSummary = {
-    totalRuns: 0,
-    totalMiles: 0,
-    totalCalories: 0,
-    totalTime: 0,
-    heartRateSum: 0,
-    heartRateCount: 0,
-    paceActivities: 0,
-  };
-
-  activities.forEach((activity) => {
-    if (!activity.startDateLocal) return;
-
-    const activityDate = new Date(activity.startDateLocal);
-    activityDate.setHours(0, 0, 0, 0);
-
-    if (activityDate >= weekStart && activityDate <= weekEnd) {
-      const dayIndex = Math.floor((activityDate.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
-      if (dayIndex >= 0 && dayIndex < 7) {
-        summary.totalRuns += 1;
-        // Add to day miles
-        if (activity.distance) {
-          days[dayIndex].miles += activity.distance;
-          summary.totalMiles += activity.distance;
-        }
-
-        // Add to day time
-        if (activity.elapsedTime) {
-          days[dayIndex].time += activity.elapsedTime;
-          summary.totalTime += activity.elapsedTime;
-        }
-
-        // Add to weekly totals
-        if (activity.calories) {
-          summary.totalCalories += activity.calories;
-        }
-
-        // Track heart rate
-        if (activity.averageHeartRate && activity.averageHeartRate > 0) {
-          summary.heartRateSum += activity.averageHeartRate;
-          summary.heartRateCount += 1;
-        }
-
-        // Track activities with both distance and time for pace calculation
-        if (activity.distance && activity.distance > 0 && activity.elapsedTime && activity.elapsedTime > 0) {
-          summary.paceActivities += 1;
-        }
-      }
-    }
-  });
-
-  return { days, summary };
-}
-
-function getWeeklySummaries(
-  activities: Activity[],
-): Array<{ weekStart: Date; weekNumber: number; summary: WeekSummary }> {
-  const weeks = getAvailableWeeks(activities);
-  const numWeeks = weeks.length;
-  return weeks.map((weekStart, index) => {
-    const { summary } = getWeekData(activities, weekStart);
-    return {
-      weekStart,
-      weekNumber: numWeeks - index,
-      summary,
-    };
-  });
-}
-
 export function Weekly() {
-  const { activities, isLoading: isActivitiesLoading, isError: isActivitiesError } = useActivities();
+  const {
+    isLoading: isActivitiesLoading,
+    isError: isActivitiesError,
+    availableWeeks,
+    getWeekData,
+    weekSummaries,
+  } = useActivities();
 
   const [activeTab, setActiveTab] = useState<'weekly' | 'summary'>('weekly');
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
 
-  const availableWeeks = useMemo(() => getAvailableWeeks(activities), [activities]);
-
   const currentWeekStart = availableWeeks[currentWeekIndex] ?? null;
-
-  const weekDataResult = useMemo(() => {
-    if (!currentWeekStart) {
-      return { days: [], summary: null };
-    }
-    return getWeekData(activities, currentWeekStart);
-  }, [activities, currentWeekStart]);
-
-  const weekData = weekDataResult.days;
-  const summary = weekDataResult.summary;
-
-  // Get all week summaries for the selected training block
-  const weekSummaries = useMemo(() => {
-    return getWeeklySummaries(activities);
-  }, [activities]);
+  const { days: weekData, summary } = currentWeekStart
+    ? getWeekData(currentWeekStart)
+    : { days: [], summary: null };
 
   const weekLabel = currentWeekStart
     ? `${currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(
@@ -172,26 +28,20 @@ export function Weekly() {
     : '';
 
   const goToPreviousWeek = () => {
-    if (currentWeekIndex < availableWeeks.length - 1) {
-      setCurrentWeekIndex(currentWeekIndex + 1);
-    }
+    if (currentWeekIndex < availableWeeks.length - 1) setCurrentWeekIndex(currentWeekIndex + 1);
   };
 
   const goToNextWeek = () => {
-    if (currentWeekIndex > 0) {
-      setCurrentWeekIndex(currentWeekIndex - 1);
-    }
+    if (currentWeekIndex > 0) setCurrentWeekIndex(currentWeekIndex - 1);
   };
 
-  if (summary === null) return;
-
-  // Calculate derived metrics for weekly view
-  const totalMiles = summary.totalMiles;
+  const totalMiles = summary?.totalMiles ?? 0;
   const totalRuns = weekData.filter((d) => d.miles > 0).length;
   const avgMilesPerDay = totalRuns > 0 ? totalMiles / 7 : 0;
-  const avgHeartRate = summary.heartRateCount > 0 ? summary.heartRateSum / summary.heartRateCount : null;
-  const totalTimeHours = summary.totalTime / 3600;
-  const averagePace = calculateAveragePaceFromSummary(summary);
+  const avgHeartRate =
+    summary && summary.heartRateCount > 0 ? summary.heartRateSum / summary.heartRateCount : null;
+  const totalTimeHours = (summary?.totalTime ?? 0) / 3600;
+  const averagePace = summary ? calculateAveragePaceFromSummary(summary) : null;
 
   if (isActivitiesLoading) {
     return (
@@ -288,7 +138,7 @@ export function Weekly() {
                     <p className='text-sm text-gray-600'>Miles</p>
                     <p className='text-2xl font-bold text-gray-900'>{totalMiles.toFixed(2)}</p>
                   </div>
-                  {summary.totalTime > 0 && (
+                  {summary && summary.totalTime > 0 && (
                     <div className='bg-gray-50 rounded-lg p-4'>
                       <p className='text-sm text-gray-600'>Time</p>
                       <p className='text-2xl font-bold text-gray-900'>{formatTimeFromHours(totalTimeHours)}</p>
@@ -309,10 +159,12 @@ export function Weekly() {
                       <p className='text-2xl font-bold text-gray-900'>{Math.round(avgHeartRate)} bpm</p>
                     </div>
                   )}
-                  {summary.totalCalories > 0 && (
+                  {summary && summary.totalCalories > 0 && (
                     <div className='bg-gray-50 rounded-lg p-4'>
                       <p className='text-sm text-gray-600'>Calories</p>
-                      <p className='text-2xl font-bold text-gray-900'>{Math.round(summary.totalCalories)}</p>
+                      <p className='text-2xl font-bold text-gray-900'>
+                        {Math.round(summary.totalCalories)}
+                      </p>
                     </div>
                   )}
                   <div className='bg-gray-50 rounded-lg p-4'>
