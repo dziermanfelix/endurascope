@@ -94,7 +94,6 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
                 value={formData.raceName}
                 onChange={(e) => handleChange('raceName', e.target.value)}
                 className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
-                placeholder='e.g., Boston Marathon 2025'
                 required
                 disabled={loading}
               />
@@ -111,7 +110,6 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
                 value={formData.identifier}
                 onChange={(e) => handleChange('identifier', e.target.value)}
                 className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
-                placeholder='e.g., BM2025'
                 required
                 disabled={loading}
               />
