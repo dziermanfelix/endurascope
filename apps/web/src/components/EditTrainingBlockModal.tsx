@@ -168,7 +168,7 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
               </button>
               <button
                 type='submit'
-                className='flex-1 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed'
+                className='flex-1 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors disabled:opacity-50'
                 disabled={loading}
               >
                 {loading ? (

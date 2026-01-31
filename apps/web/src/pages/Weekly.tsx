@@ -231,7 +231,7 @@ export function Weekly() {
               className={`px-6 py-3 font-medium text-sm transition-colors ${
                 activeTab === 'weekly'
                   ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900 hover:cursor-pointer'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               Weekly View
@@ -241,7 +241,7 @@ export function Weekly() {
               className={`px-6 py-3 font-medium text-sm transition-colors ${
                 activeTab === 'summary'
                   ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900 hover:cursor-pointer'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               Summary
@@ -258,7 +258,7 @@ export function Weekly() {
                   <button
                     onClick={goToPreviousWeek}
                     disabled={currentWeekIndex >= availableWeeks.length - 1}
-                    className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 hover:cursor-pointer disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
+                    className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded-lg font-medium transition-colors flex items-center gap-2'
                   >
                     <ArrowIcon direction='left' />
                     Previous
@@ -269,7 +269,7 @@ export function Weekly() {
                   <button
                     onClick={goToNextWeek}
                     disabled={currentWeekIndex === 0}
-                    className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 hover:cursor-pointer disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2'
+                    className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded-lg font-medium transition-colors flex items-center gap-2'
                   >
                     Next
                     <ArrowIcon direction='right' />

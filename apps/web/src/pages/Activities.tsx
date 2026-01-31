@@ -24,7 +24,7 @@ export function Activities() {
             await refetch();
           }}
           disabled={isRefetching || isLoading}
-          className='bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200 flex items-center gap-2 hover:cursor-pointer'
+          className='bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200 flex items-center gap-2'
         >
           {isRefetching ? 'Refetching...' : 'Refetch'}
         </button>

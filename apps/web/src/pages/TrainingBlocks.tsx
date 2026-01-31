@@ -58,7 +58,7 @@ export function TrainingBlocks() {
         <h2 className='text-2xl font-bold text-gray-900'>Manage Training Blocks</h2>
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className='px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors flex items-center gap-2 hover:cursor-pointer'
+          className='px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors flex items-center gap-2'
         >
           <CreateIcon />
           Training Block
