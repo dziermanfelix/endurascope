@@ -1,24 +1,72 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { calculateAveragePaceFromSummary, formatTimeFromHours } from '../util/time';
-import { useActivities } from '../contexts/ActivitiesContext';
+import { useActivities, getWeekStart, getWeekDataForStart } from '../contexts/ActivitiesContext';
+import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 import { ArrowIcon } from '../components/ArrowIcon';
 import WeeklyChart from '../components/WeeklyChart';
 
 export function Weekly() {
   const {
+    activities,
     isLoading: isActivitiesLoading,
     isError: isActivitiesError,
     availableWeeks,
     getWeekData,
     weekSummaries,
   } = useActivities();
+  const { trainingBlocks } = useTrainingBlocks();
 
   const [activeTab, setActiveTab] = useState<'weekly' | 'summary'>('weekly');
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
+  const [selectedTrainingBlockId, setSelectedTrainingBlockId] = useState<string | null>(null);
 
-  const currentWeekStart = availableWeeks[currentWeekIndex] ?? null;
+  const selectedBlock = useMemo(
+    () => trainingBlocks.find((tb) => tb.identifier === selectedTrainingBlockId) ?? null,
+    [trainingBlocks, selectedTrainingBlockId],
+  );
+
+  const filteredActivities = useMemo(
+    () =>
+      selectedTrainingBlockId
+        ? activities.filter((a) => a.name?.toLowerCase().startsWith(selectedTrainingBlockId.toLowerCase()))
+        : activities,
+    [activities, selectedTrainingBlockId],
+  );
+
+  const displayedWeeks = useMemo(() => {
+    if (!selectedBlock) return availableWeeks;
+    // Use UTC date parts so "2025-01-06T00:00:00.000Z" → Jan 6 at midnight local (preserve the stored day)
+    const startDate = new Date(selectedBlock.startDate);
+    const startLocal = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate());
+    const blockStartWeek = getWeekStart(startLocal);
+    const weeks: Date[] = [];
+    for (let i = 0; i < selectedBlock.durationWeeks; i++) {
+      const weekStart = new Date(blockStartWeek);
+      weekStart.setDate(weekStart.getDate() + i * 7);
+      weeks.push(weekStart);
+    }
+    return weeks.sort((a, b) => b.getTime() - a.getTime());
+  }, [selectedBlock, availableWeeks]);
+
+  const getDisplayedWeekData = (weekStart: Date) =>
+    selectedBlock ? getWeekDataForStart(filteredActivities, weekStart) : getWeekData(weekStart);
+
+  const displayedWeekSummaries = useMemo(() => {
+    if (!selectedBlock) return weekSummaries;
+    const numWeeks = displayedWeeks.length;
+    return displayedWeeks.map((weekStart, index) => {
+      const { summary } = getWeekDataForStart(filteredActivities, weekStart);
+      return { weekStart, weekNumber: numWeeks - index, summary };
+    });
+  }, [selectedBlock, displayedWeeks, filteredActivities, weekSummaries]);
+
+  useEffect(() => {
+    setCurrentWeekIndex((i) => Math.min(i, Math.max(0, displayedWeeks.length - 1)));
+  }, [displayedWeeks.length]);
+
+  const currentWeekStart = displayedWeeks[currentWeekIndex] ?? null;
   const { days: weekData, summary } = currentWeekStart
-    ? getWeekData(currentWeekStart)
+    ? getDisplayedWeekData(currentWeekStart)
     : { days: [], summary: null };
 
   const weekLabel = currentWeekStart
@@ -28,7 +76,7 @@ export function Weekly() {
     : '';
 
   const goToPreviousWeek = () => {
-    if (currentWeekIndex < availableWeeks.length - 1) setCurrentWeekIndex(currentWeekIndex + 1);
+    if (currentWeekIndex < displayedWeeks.length - 1) setCurrentWeekIndex(currentWeekIndex + 1);
   };
 
   const goToNextWeek = () => {
@@ -38,8 +86,7 @@ export function Weekly() {
   const totalMiles = summary?.totalMiles ?? 0;
   const totalRuns = weekData.filter((d) => d.miles > 0).length;
   const avgMilesPerDay = totalRuns > 0 ? totalMiles / 7 : 0;
-  const avgHeartRate =
-    summary && summary.heartRateCount > 0 ? summary.heartRateSum / summary.heartRateCount : null;
+  const avgHeartRate = summary && summary.heartRateCount > 0 ? summary.heartRateSum / summary.heartRateCount : null;
   const totalTimeHours = (summary?.totalTime ?? 0) / 3600;
   const averagePace = summary ? calculateAveragePaceFromSummary(summary) : null;
 
@@ -60,7 +107,7 @@ export function Weekly() {
     );
   }
 
-  if (availableWeeks.length === 0 && activeTab === 'weekly') {
+  if (displayedWeeks.length === 0 && activeTab === 'weekly') {
     return (
       <div className='bg-white rounded-lg shadow-md p-8 text-center'>
         <p className='text-gray-600 text-lg'>No activity data available for weekly breakdown.</p>
@@ -72,6 +119,23 @@ export function Weekly() {
     <>
       <div className='flex justify-between items-center mb-6'>
         <h2 className='text-2xl font-bold text-gray-900'>Weekly Training</h2>
+        <div className='w-1/4 min-w-[180px]'>
+          <select
+            className='w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer'
+            value={selectedTrainingBlockId ?? ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSelectedTrainingBlockId(value === '' ? null : value);
+            }}
+          >
+            <option value=''>All Training Blocks</option>
+            {trainingBlocks.map((tb) => (
+              <option key={tb.id} value={tb.identifier}>
+                {tb.identifier}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <div className='space-y-6'>
         <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6 '>
@@ -107,14 +171,14 @@ export function Weekly() {
                 <div className='flex items-center gap-4'>
                   <button
                     onClick={goToPreviousWeek}
-                    disabled={currentWeekIndex >= availableWeeks.length - 1}
+                    disabled={currentWeekIndex >= displayedWeeks.length - 1}
                     className='px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded-lg font-medium transition-colors flex items-center gap-2'
                   >
                     <ArrowIcon direction='left' />
                     Previous
                   </button>
                   <span className='text-sm text-gray-500'>
-                    Week {availableWeeks.length - currentWeekIndex} of {availableWeeks.length}
+                    Week {displayedWeeks.length - currentWeekIndex} of {displayedWeeks.length}
                   </span>
                   <button
                     onClick={goToNextWeek}
@@ -162,9 +226,7 @@ export function Weekly() {
                   {summary && summary.totalCalories > 0 && (
                     <div className='bg-gray-50 rounded-lg p-4'>
                       <p className='text-sm text-gray-600'>Calories</p>
-                      <p className='text-2xl font-bold text-gray-900'>
-                        {Math.round(summary.totalCalories)}
-                      </p>
+                      <p className='text-2xl font-bold text-gray-900'>{Math.round(summary.totalCalories)}</p>
                     </div>
                   )}
                   <div className='bg-gray-50 rounded-lg p-4'>
@@ -180,13 +242,13 @@ export function Weekly() {
 
           {activeTab === 'summary' && (
             <div className='space-y-4'>
-              {weekSummaries.length === 0 ? (
+              {displayedWeekSummaries.length === 0 ? (
                 <div className='text-center py-8 text-gray-600'>
                   <p>No activity data available for this training block.</p>
                 </div>
               ) : (
                 <div className='space-y-4'>
-                  {weekSummaries.map(({ weekStart, weekNumber, summary }) => {
+                  {displayedWeekSummaries.map(({ weekStart, weekNumber, summary }) => {
                     const weekEnd = new Date(weekStart);
                     weekEnd.setDate(weekStart.getDate() + 6);
                     const weekLabel = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;

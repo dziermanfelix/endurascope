@@ -12,7 +12,6 @@ import {
 import { Activity } from '../types/activity';
 import { fetchActivities, refetchActivitiesFromStrava } from '../api/activities';
 
-// --- Weekly types (Monday–Sunday) ---
 export interface DayData {
   day: string;
   dayLabel: string;
@@ -39,7 +38,7 @@ export interface WeekSummaryItem {
 
 const WEEKDAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
-function getWeekStart(date: Date): Date {
+export function getWeekStart(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
@@ -48,7 +47,10 @@ function getWeekStart(date: Date): Date {
   return d;
 }
 
-function getWeekDataForStart(activities: Activity[], weekStart: Date): { days: DayData[]; summary: WeekSummary } {
+export function getWeekDataForStart(
+  activities: Activity[],
+  weekStart: Date,
+): { days: DayData[]; summary: WeekSummary } {
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);
   weekEnd.setHours(23, 59, 59, 999);
@@ -99,12 +101,7 @@ function getWeekDataForStart(activities: Activity[], weekStart: Date): { days: D
           summary.heartRateSum += activity.averageHeartRate;
           summary.heartRateCount += 1;
         }
-        if (
-          activity.distance &&
-          activity.distance > 0 &&
-          activity.elapsedTime &&
-          activity.elapsedTime > 0
-        ) {
+        if (activity.distance && activity.distance > 0 && activity.elapsedTime && activity.elapsedTime > 0) {
           summary.paceActivities += 1;
         }
       }
@@ -188,10 +185,7 @@ export const ActivitiesProvider = ({ children }: ActivitiesProviderProps) => {
       .sort((a, b) => b.getTime() - a.getTime());
   }, [activities]);
 
-  const getWeekData = useCallback(
-    (weekStart: Date) => getWeekDataForStart(activities, weekStart),
-    [activities],
-  );
+  const getWeekData = useCallback((weekStart: Date) => getWeekDataForStart(activities, weekStart), [activities]);
 
   const weekSummaries = useMemo(() => {
     const numWeeks = availableWeeks.length;
