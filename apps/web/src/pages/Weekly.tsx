@@ -20,6 +20,11 @@ export function Weekly() {
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const [selectedTrainingBlockId, setSelectedTrainingBlockId] = useState<string | null>(null);
 
+  const currentCalendarWeekStart = useMemo(
+    () => getWeekStart(new Date()),
+    [],
+  );
+
   const selectedBlock = useMemo(
     () => trainingBlocks.find((tb) => tb.identifier === selectedTrainingBlockId) ?? null,
     [trainingBlocks, selectedTrainingBlockId],
@@ -34,7 +39,16 @@ export function Weekly() {
   );
 
   const displayedWeeks = useMemo(() => {
-    if (!selectedBlock) return availableWeeks;
+    if (!selectedBlock) {
+      const sameDay = (a: Date, b: Date) =>
+        a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+      const hasCurrent = availableWeeks.some((w) => sameDay(w, currentCalendarWeekStart));
+      if (!hasCurrent) {
+        const weeks = [...availableWeeks, new Date(currentCalendarWeekStart.getTime())];
+        return weeks.sort((a, b) => b.getTime() - a.getTime());
+      }
+      return availableWeeks;
+    }
     const startDate = new Date(selectedBlock.startDate);
     const startLocal = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate());
     const blockStartWeek = getWeekStart(startLocal);
@@ -45,7 +59,7 @@ export function Weekly() {
       weeks.push(weekStart);
     }
     return weeks.sort((a, b) => b.getTime() - a.getTime());
-  }, [selectedBlock, availableWeeks]);
+  }, [selectedBlock, availableWeeks, currentCalendarWeekStart]);
 
   const getDisplayedWeekData = (weekStart: Date) =>
     selectedBlock ? getWeekDataForStart(filteredActivities, weekStart) : getWeekData(weekStart);
@@ -60,8 +74,15 @@ export function Weekly() {
   }, [selectedBlock, displayedWeeks, filteredActivities, weekSummaries]);
 
   useEffect(() => {
-    setCurrentWeekIndex((i) => Math.min(i, Math.max(0, displayedWeeks.length - 1)));
-  }, [displayedWeeks.length]);
+    const sameDay = (a: Date, b: Date) =>
+      a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    const idx = displayedWeeks.findIndex((w) => sameDay(w, currentCalendarWeekStart));
+    if (idx >= 0) {
+      setCurrentWeekIndex(idx);
+    } else {
+      setCurrentWeekIndex(0);
+    }
+  }, [displayedWeeks, currentCalendarWeekStart]);
 
   const currentWeekStart = displayedWeeks[currentWeekIndex] ?? null;
   const { days: weekData, summary } = currentWeekStart
