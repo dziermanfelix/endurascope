@@ -76,12 +76,20 @@ export function Weekly() {
   useEffect(() => {
     const sameDay = (a: Date, b: Date) =>
       a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-    const idx = displayedWeeks.findIndex((w) => sameDay(w, currentCalendarWeekStart));
-    if (idx >= 0) {
-      setCurrentWeekIndex(idx);
-    } else {
-      setCurrentWeekIndex(0);
+    let idx = displayedWeeks.findIndex((w) => sameDay(w, currentCalendarWeekStart));
+    if (idx < 0) {
+      const currentTime = currentCalendarWeekStart.getTime();
+      let minDiff = Infinity;
+      displayedWeeks.forEach((w, i) => {
+        const diff = Math.abs(w.getTime() - currentTime);
+        if (diff < minDiff) {
+          minDiff = diff;
+          idx = i;
+        }
+      });
+      if (idx < 0) idx = 0;
     }
+    setCurrentWeekIndex(idx);
   }, [displayedWeeks, currentCalendarWeekStart]);
 
   const currentWeekStart = displayedWeeks[currentWeekIndex] ?? null;
