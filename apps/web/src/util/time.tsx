@@ -1,4 +1,4 @@
-import type { WeekSummary } from '../contexts/ActivitiesContext';
+import type { WeekSummary } from './week';
 
 export const formatTimeFromSeconds = (seconds: number): string => {
   if (seconds === 0) return '0s';

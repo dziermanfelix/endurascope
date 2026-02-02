@@ -1,6 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { calculatePace, formatTimeFromSeconds } from '../util/time';
-import type { DayData } from '../contexts/ActivitiesContext';
+import type { DayData } from '../util/week';
 
 interface WeeklyChartProps {
   weekData: DayData[] | never[];

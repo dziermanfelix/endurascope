@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { calculateAveragePaceFromSummary, formatTimeFromHours } from '../util/time';
-import { useActivities, getWeekStart, getWeekDataForStart } from '../contexts/ActivitiesContext';
+import { getWeekStart, getWeekDataForStart } from '../util/week';
+import { useActivities } from '../contexts/ActivitiesContext';
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 import { ArrowIcon } from '../components/ArrowIcon';
 import WeeklyChart from '../components/WeeklyChart';
@@ -12,7 +13,6 @@ export function Weekly() {
     isError: isActivitiesError,
     availableWeeks,
     getWeekData,
-    weekSummaries,
   } = useActivities();
   const { trainingBlocks } = useTrainingBlocks();
 
@@ -20,14 +20,11 @@ export function Weekly() {
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const [selectedTrainingBlockId, setSelectedTrainingBlockId] = useState<string | null>(null);
 
-  const currentCalendarWeekStart = useMemo(
-    () => getWeekStart(new Date()),
-    [],
-  );
+  const currentCalendarWeekStart = useMemo(() => getWeekStart(new Date()), []);
 
   const selectedBlock = useMemo(
     () => trainingBlocks.find((tb) => tb.identifier === selectedTrainingBlockId) ?? null,
-    [trainingBlocks, selectedTrainingBlockId],
+    [trainingBlocks, selectedTrainingBlockId]
   );
 
   const filteredActivities = useMemo(
@@ -35,7 +32,7 @@ export function Weekly() {
       selectedTrainingBlockId
         ? activities.filter((a) => a.name?.toLowerCase().startsWith(selectedTrainingBlockId.toLowerCase()))
         : activities,
-    [activities, selectedTrainingBlockId],
+    [activities, selectedTrainingBlockId]
   );
 
   const displayedWeeks = useMemo(() => {
@@ -65,13 +62,14 @@ export function Weekly() {
     selectedBlock ? getWeekDataForStart(filteredActivities, weekStart) : getWeekData(weekStart);
 
   const displayedWeekSummaries = useMemo(() => {
-    if (!selectedBlock) return weekSummaries;
     const numWeeks = displayedWeeks.length;
     return displayedWeeks.map((weekStart, index) => {
-      const { summary } = getWeekDataForStart(filteredActivities, weekStart);
+      const summary = selectedBlock
+        ? getWeekDataForStart(filteredActivities, weekStart).summary
+        : getWeekData(weekStart).summary;
       return { weekStart, weekNumber: numWeeks - index, summary };
     });
-  }, [selectedBlock, displayedWeeks, filteredActivities, weekSummaries]);
+  }, [selectedBlock, displayedWeeks, filteredActivities, getWeekData]);
 
   useEffect(() => {
     const sameDay = (a: Date, b: Date) =>
@@ -99,7 +97,7 @@ export function Weekly() {
 
   const weekLabel = currentWeekStart
     ? `${currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(
-        currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000,
+        currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000
       ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
     : '';
 
