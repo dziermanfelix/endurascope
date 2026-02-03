@@ -3,7 +3,7 @@ import { calculateAveragePaceFromSummary, formatTimeFromHours } from '../util/ti
 import { getWeekStart, getWeekDataForStart } from '../util/week';
 import { useActivities } from '../contexts/ActivitiesContext';
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
-import { ArrowIcon } from '../components/ArrowIcon';
+import { ArrowIcon } from '../icons/ArrowIcon';
 import WeeklyChart from '../components/WeeklyChart';
 
 export function Weekly() {

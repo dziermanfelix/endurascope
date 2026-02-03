@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { updateTrainingBlock, TrainingBlock, UpdateTrainingBlockDto } from '../api/training-blocks';
-import CloseIcon from './CloseIcon';
-import LoadingIcon from './LoadingIcon';
+import CloseIcon from '../icons/CloseIcon';
+import LoadingIcon from '../icons/LoadingIcon';
 
 interface EditTrainingBlockModalProps {
   isOpen: boolean;

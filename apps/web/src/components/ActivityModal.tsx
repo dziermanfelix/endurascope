@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Activity } from '../types/activity';
 import { formatDate, formatPace, formatTimeFromSeconds } from '../util/time';
-import CloseIcon from '../components/CloseIcon';
+import CloseIcon from '../icons/CloseIcon';
 import { updateActivityName } from '../api/activities';
 import { useActivities } from '../contexts/ActivitiesContext';
 

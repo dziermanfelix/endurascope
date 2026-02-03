@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createTrainingBlock, CreateTrainingBlockDto } from '../api/training-blocks';
-import CloseIcon from './CloseIcon';
+import CloseIcon from '../icons/CloseIcon';
 
 interface CreateTrainingBlockModalProps {
   isOpen: boolean;

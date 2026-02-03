@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { deleteTrainingBlock, TrainingBlock } from '../api/training-blocks';
 import { CreateTrainingBlockModal } from '../components/CreateTrainingBlockModal';
 import { EditTrainingBlockModal } from '../components/EditTrainingBlockModal';
-import CreateIcon from '../components/CreateIcon';
+import CreateIcon from '../icons/CreateIcon';
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 
 export function TrainingBlocks() {
