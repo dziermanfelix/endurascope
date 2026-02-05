@@ -38,6 +38,18 @@ export function Activities() {
         </div>
       </div>
 
+      {!isLoading && !isError && (
+        <div className='mb-4 flex justify-left'>
+          <button
+            onClick={async () => await refetch()}
+            disabled={isRefetching}
+            className='bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200'
+          >
+            {isRefetching ? 'Refetching...' : 'Refetch from Strava'}
+          </button>
+        </div>
+      )}
+
       {isLoading && (
         <div className='flex justify-center items-center py-12'>
           <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
@@ -67,18 +79,6 @@ export function Activities() {
               onCardClick={(activity) => setSelectedActivity(activity)}
             />
           ))}
-        </div>
-      )}
-
-      {!isLoading && !isError && (
-        <div className='mt-8 flex justify-center'>
-          <button
-            onClick={async () => await refetch()}
-            disabled={isRefetching}
-            className='bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200'
-          >
-            {isRefetching ? 'Refetching...' : 'Refetch from Strava'}
-          </button>
         </div>
       )}
 
