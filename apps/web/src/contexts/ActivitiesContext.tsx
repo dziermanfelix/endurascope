@@ -86,7 +86,7 @@ export const ActivitiesProvider = ({ children }: ActivitiesProviderProps) => {
       availableWeeks,
       getWeekData,
     }),
-    [activities, isLoading, isRefetching, isError, loadActivities, refetch, availableWeeks, getWeekData]
+    [activities, isLoading, isRefetching, isError, loadActivities, refetch, availableWeeks, getWeekData],
   );
 
   return <ActivitiesContext.Provider value={value}>{children}</ActivitiesContext.Provider>;

@@ -4,9 +4,10 @@ import type { DayData } from '../util/week';
 
 interface WeeklyChartProps {
   weekData: DayData[] | never[];
+  onClick: () => void;
 }
 
-const WeeklyChart = ({ weekData }: WeeklyChartProps) => {
+const WeeklyChart = ({ weekData, onClick }: WeeklyChartProps) => {
   return (
     <>
       <ResponsiveContainer width='100%' height={400}>
@@ -21,7 +22,6 @@ const WeeklyChart = ({ weekData }: WeeklyChartProps) => {
               const data = payload[0].payload as DayData;
               const miles = data.miles;
               const timeSeconds = data.time;
-
               const pace = calculatePace(miles, timeSeconds);
               const timeFormatted = formatTimeFromSeconds(timeSeconds);
 
@@ -47,7 +47,7 @@ const WeeklyChart = ({ weekData }: WeeklyChartProps) => {
               );
             }}
           />
-          <Bar dataKey='miles' fill='#3b82f6' radius={[8, 8, 0, 0]} />
+          <Bar className='cursor-pointer' dataKey='miles' fill='#3b82f6' radius={[8, 8, 0, 0]} onClick={onClick} />
         </BarChart>
       </ResponsiveContainer>
     </>

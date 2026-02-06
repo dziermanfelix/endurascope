@@ -37,7 +37,7 @@ export function getWeekStart(date: Date): Date {
 
 export function getWeekDataForStart(
   activities: Activity[],
-  weekStart: Date
+  weekStart: Date,
 ): { days: DayData[]; summary: WeekSummary } {
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);

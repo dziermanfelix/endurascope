@@ -5,6 +5,9 @@ import { useActivities } from '../contexts/ActivitiesContext';
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 import { ArrowIcon } from '../icons/ArrowIcon';
 import WeeklyChart from '../components/WeeklyChart';
+import { Activity } from '../types/activity';
+import { ActivityModal } from '../components/ActivityModal';
+import { TrainingBlock } from '../api/training-blocks';
 
 export function Weekly() {
   const {
@@ -16,27 +19,23 @@ export function Weekly() {
   } = useActivities();
   const { trainingBlocks } = useTrainingBlocks();
 
-  const [activeTab, setActiveTab] = useState<'weekly' | 'summary'>('weekly');
+  const [activeTab, setActiveTab] = useState<'weekly' | 'summary'>('summary');
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
-  const [selectedTrainingBlockId, setSelectedTrainingBlockId] = useState<string | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [selectedTrainingBlock, setSelectedTrainingBlock] = useState<TrainingBlock | null>(null);
 
   const currentCalendarWeekStart = useMemo(() => getWeekStart(new Date()), []);
 
-  const selectedBlock = useMemo(
-    () => trainingBlocks.find((tb) => tb.identifier === selectedTrainingBlockId) ?? null,
-    [trainingBlocks, selectedTrainingBlockId]
-  );
-
   const filteredActivities = useMemo(
     () =>
-      selectedTrainingBlockId
-        ? activities.filter((a) => a.name?.toLowerCase().startsWith(selectedTrainingBlockId.toLowerCase()))
+      selectedTrainingBlock
+        ? activities.filter((a) => a.name?.toLowerCase().startsWith(selectedTrainingBlock.identifier.toLowerCase()))
         : activities,
-    [activities, selectedTrainingBlockId]
+    [activities, selectedTrainingBlock],
   );
 
   const displayedWeeks = useMemo(() => {
-    if (!selectedBlock) {
+    if (!selectedTrainingBlock) {
       const sameDay = (a: Date, b: Date) =>
         a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
       const hasCurrent = availableWeeks.some((w) => sameDay(w, currentCalendarWeekStart));
@@ -46,30 +45,30 @@ export function Weekly() {
       }
       return availableWeeks;
     }
-    const startDate = new Date(selectedBlock.startDate);
+    const startDate = new Date(selectedTrainingBlock.startDate);
     const startLocal = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate());
     const blockStartWeek = getWeekStart(startLocal);
     const weeks: Date[] = [];
-    for (let i = 0; i < selectedBlock.durationWeeks; i++) {
+    for (let i = 0; i < selectedTrainingBlock.durationWeeks; i++) {
       const weekStart = new Date(blockStartWeek);
       weekStart.setDate(weekStart.getDate() + i * 7);
       weeks.push(weekStart);
     }
     return weeks.sort((a, b) => b.getTime() - a.getTime());
-  }, [selectedBlock, availableWeeks, currentCalendarWeekStart]);
+  }, [selectedTrainingBlock, availableWeeks, currentCalendarWeekStart]);
 
   const getDisplayedWeekData = (weekStart: Date) =>
-    selectedBlock ? getWeekDataForStart(filteredActivities, weekStart) : getWeekData(weekStart);
+    selectedTrainingBlock ? getWeekDataForStart(filteredActivities, weekStart) : getWeekData(weekStart);
 
   const displayedWeekSummaries = useMemo(() => {
     const numWeeks = displayedWeeks.length;
     return displayedWeeks.map((weekStart, index) => {
-      const summary = selectedBlock
+      const summary = selectedTrainingBlock
         ? getWeekDataForStart(filteredActivities, weekStart).summary
         : getWeekData(weekStart).summary;
       return { weekStart, weekNumber: numWeeks - index, summary };
     });
-  }, [selectedBlock, displayedWeeks, filteredActivities, getWeekData]);
+  }, [selectedTrainingBlock, displayedWeeks, filteredActivities, getWeekData]);
 
   useEffect(() => {
     const sameDay = (a: Date, b: Date) =>
@@ -97,7 +96,7 @@ export function Weekly() {
 
   const weekLabel = currentWeekStart
     ? `${currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(
-        currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000
+        currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000,
       ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
     : '';
 
@@ -148,15 +147,16 @@ export function Weekly() {
         <div className='w-1/4 min-w-[180px]'>
           <select
             className='w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer'
-            value={selectedTrainingBlockId ?? ''}
+            value={selectedTrainingBlock?.id ?? ''}
             onChange={(e) => {
-              const value = e.target.value;
-              setSelectedTrainingBlockId(value === '' ? null : value);
+              const id = e.target.value;
+              const block = id === '' ? null : (trainingBlocks.find((tb) => tb.id === id) ?? null);
+              setSelectedTrainingBlock(block);
             }}
           >
             <option value=''>All Training Blocks</option>
             {trainingBlocks.map((tb) => (
-              <option key={tb.id} value={tb.identifier}>
+              <option key={tb.id} value={tb.id}>
                 {tb.identifier}
               </option>
             ))}
@@ -262,7 +262,7 @@ export function Weekly() {
                 </div>
               </div>
 
-              <WeeklyChart weekData={weekData} />
+              <WeeklyChart weekData={weekData} onClick={() => setSelectedActivity(activities[0])} />
             </>
           )}
 
@@ -337,6 +337,8 @@ export function Weekly() {
           )}
         </div>
       </div>
+
+      {selectedActivity && <ActivityModal activity={selectedActivity} onClose={() => setSelectedActivity(null)} />}
     </>
   );
 }

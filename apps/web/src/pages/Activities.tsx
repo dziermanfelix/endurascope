@@ -82,7 +82,6 @@ export function Activities() {
         </div>
       )}
 
-      {/* Activity Detail Modal */}
       {selectedActivity && <ActivityModal activity={selectedActivity} onClose={() => setSelectedActivity(null)} />}
     </>
   );
