@@ -4,7 +4,7 @@ import type { DayData } from '../util/week';
 
 interface WeeklyChartProps {
   weekData: DayData[] | never[];
-  onClick: () => void;
+  onClick: (day: DayData) => void;
 }
 
 const WeeklyChart = ({ weekData, onClick }: WeeklyChartProps) => {
@@ -47,7 +47,15 @@ const WeeklyChart = ({ weekData, onClick }: WeeklyChartProps) => {
               );
             }}
           />
-          <Bar className='cursor-pointer' dataKey='miles' fill='#3b82f6' radius={[8, 8, 0, 0]} onClick={onClick} />
+          <Bar
+            className='cursor-pointer'
+            dataKey='miles'
+            fill='#3b82f6'
+            radius={[8, 8, 0, 0]}
+            onClick={(data) => {
+              onClick(data.payload as DayData);
+            }}
+          />
         </BarChart>
       </ResponsiveContainer>
     </>

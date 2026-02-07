@@ -1,3 +1,4 @@
+import { Activity } from '../types/activity';
 import type { WeekSummary } from './week';
 
 export const formatTimeFromSeconds = (seconds: number): string => {
@@ -54,4 +55,13 @@ export const formatPace = (averageSpeed: number | null): string | null => {
     .toString()
     .padStart(2, '0');
   return `${minutes}:${seconds}`;
+};
+
+export const isSameDay = (a: Date, b: Date) => {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+};
+
+export const parseActivityDate = (activity: Activity): Date | null => {
+  if (!activity.startDateLocal) return null;
+  return new Date(activity.startDateLocal);
 };

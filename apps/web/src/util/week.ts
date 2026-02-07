@@ -1,4 +1,5 @@
 import type { Activity } from '../types/activity';
+import { isSameDay, parseActivityDate } from './time';
 
 export interface DayData {
   day: string;
@@ -6,6 +7,7 @@ export interface DayData {
   date: Date;
   miles: number;
   time: number;
+  activity?: Activity;
 }
 
 export interface WeekSummary {
@@ -47,12 +49,20 @@ export function getWeekDataForStart(
   for (let i = 0; i < 7; i++) {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + i);
+
+    const activityForDay = activities.find((activity) => {
+      const activityDate = parseActivityDate(activity);
+      if (!activityDate) return false;
+      return isSameDay(activityDate, date);
+    });
+
     days.push({
       day: WEEKDAY_NAMES[i],
       dayLabel: `${WEEKDAY_NAMES[i]} ${date.getDate()}`,
       date: new Date(date),
       miles: 0,
       time: 0,
+      activity: activityForDay,
     });
   }
 

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { calculateAveragePaceFromSummary, formatTimeFromHours } from '../util/time';
-import { getWeekStart, getWeekDataForStart } from '../util/week';
+import { calculateAveragePaceFromSummary, formatTimeFromHours, isSameDay } from '../util/time';
+import { getWeekStart, getWeekDataForStart, DayData } from '../util/week';
 import { useActivities } from '../contexts/ActivitiesContext';
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 import { ArrowIcon } from '../icons/ArrowIcon';
@@ -19,7 +19,7 @@ export function Weekly() {
   } = useActivities();
   const { trainingBlocks } = useTrainingBlocks();
 
-  const [activeTab, setActiveTab] = useState<'weekly' | 'summary'>('summary');
+  const [activeTab, setActiveTab] = useState<'weekly' | 'summary'>('weekly');
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedTrainingBlock, setSelectedTrainingBlock] = useState<TrainingBlock | null>(null);
@@ -36,9 +36,7 @@ export function Weekly() {
 
   const displayedWeeks = useMemo(() => {
     if (!selectedTrainingBlock) {
-      const sameDay = (a: Date, b: Date) =>
-        a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-      const hasCurrent = availableWeeks.some((w) => sameDay(w, currentCalendarWeekStart));
+      const hasCurrent = availableWeeks.some((w) => isSameDay(w, currentCalendarWeekStart));
       if (!hasCurrent) {
         const weeks = [...availableWeeks, new Date(currentCalendarWeekStart.getTime())];
         return weeks.sort((a, b) => b.getTime() - a.getTime());
@@ -71,9 +69,7 @@ export function Weekly() {
   }, [selectedTrainingBlock, displayedWeeks, filteredActivities, getWeekData]);
 
   useEffect(() => {
-    const sameDay = (a: Date, b: Date) =>
-      a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-    let idx = displayedWeeks.findIndex((w) => sameDay(w, currentCalendarWeekStart));
+    let idx = displayedWeeks.findIndex((w) => isSameDay(w, currentCalendarWeekStart));
     if (idx < 0) {
       const currentTime = currentCalendarWeekStart.getTime();
       let minDiff = Infinity;
@@ -262,7 +258,12 @@ export function Weekly() {
                 </div>
               </div>
 
-              <WeeklyChart weekData={weekData} onClick={() => setSelectedActivity(activities[0])} />
+              <WeeklyChart
+                weekData={weekData}
+                onClick={(day: DayData) => {
+                  setSelectedActivity(day.activity || null);
+                }}
+              />
             </>
           )}
 
