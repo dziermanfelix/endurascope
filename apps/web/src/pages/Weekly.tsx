@@ -168,48 +168,47 @@ export function Weekly() {
               </div>
             </div>
 
-            <div className='space-y-4 mb-6'>
-              <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
-                <div className='bg-gray-50 rounded-lg p-4'>
-                  <p className='text-sm text-gray-600'>Runs</p>
-                  <p className='text-2xl font-bold text-gray-900'>{totalRuns}</p>
-                </div>
-                <div className='bg-gray-50 rounded-lg p-4'>
-                  <p className='text-sm text-gray-600'>Miles</p>
-                  <p className='text-2xl font-bold text-gray-900'>{totalMiles.toFixed(2)}</p>
-                </div>
-                {(summary?.totalTime ?? 0) > 0 && (
-                  <div className='bg-gray-50 rounded-lg p-4'>
-                    <p className='text-sm text-gray-600'>Time</p>
-                    <p className='text-2xl font-bold text-gray-900'>{formatTimeFromHours(totalTimeHours)}</p>
-                  </div>
-                )}
-                {averagePace !== null && (
-                  <div className='bg-gray-50 rounded-lg p-4'>
-                    <p className='text-sm text-gray-600'>Avg Pace</p>
-                    <p className='text-2xl font-bold text-gray-900'>{averagePace} /mi</p>
-                  </div>
-                )}
-              </div>
-
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                {avgHeartRate !== null && (
-                  <div className='bg-gray-50 rounded-lg p-4'>
-                    <p className='text-sm text-gray-600'>Avg Heart Rate</p>
-                    <p className='text-2xl font-bold text-gray-900'>{Math.round(avgHeartRate)} bpm</p>
-                  </div>
-                )}
-                {summary && summary.totalCalories > 0 && (
-                  <div className='bg-gray-50 rounded-lg p-4'>
-                    <p className='text-sm text-gray-600'>Calories</p>
-                    <p className='text-2xl font-bold text-gray-900'>{Math.round(summary.totalCalories)}</p>
-                  </div>
-                )}
-                <div className='bg-gray-50 rounded-lg p-4'>
-                  <p className='text-sm text-gray-600'>Miles Per Day</p>
-                  <p className='text-2xl font-bold text-gray-900'>{avgMilesPerDay.toFixed(2)}</p>
-                </div>
-              </div>
+            <div className='mb-6 flex flex-wrap items-baseline justify-center gap-x-6 gap-y-1 text-gray-700'>
+              <span>
+                <span className='text-gray-500'>Runs</span>{' '}
+                <span className='font-semibold tabular-nums text-gray-900'>{totalRuns}</span>
+              </span>
+              <span>
+                <span className='text-gray-500'>Miles</span>{' '}
+                <span className='font-semibold tabular-nums text-gray-900'>{totalMiles.toFixed(2)}</span>
+              </span>
+              {(summary?.totalTime ?? 0) > 0 && (
+                <span>
+                  <span className='text-gray-500'>Time</span>{' '}
+                  <span className='font-semibold tabular-nums text-gray-900'>
+                    {formatTimeFromHours(totalTimeHours)}
+                  </span>
+                </span>
+              )}
+              {averagePace !== null && (
+                <span>
+                  <span className='text-gray-500'>Avg pace</span>{' '}
+                  <span className='font-semibold tabular-nums text-gray-900'>{averagePace}/mi</span>
+                </span>
+              )}
+              {avgHeartRate !== null && (
+                <span>
+                  <span className='text-gray-500'>Avg HR</span>{' '}
+                  <span className='font-semibold tabular-nums text-gray-900'>{Math.round(avgHeartRate)} bpm</span>
+                </span>
+              )}
+              {summary && summary.totalCalories > 0 && (
+                <span>
+                  <span className='text-gray-500'>Calories</span>{' '}
+                  <span className='font-semibold tabular-nums text-gray-900'>
+                    {Math.round(summary.totalCalories).toLocaleString()}
+                  </span>
+                </span>
+              )}
+              <span>
+                <span className='text-gray-500'>Miles/day</span>{' '}
+                <span className='font-semibold tabular-nums text-gray-900'>{avgMilesPerDay.toFixed(2)}</span>
+              </span>
             </div>
 
             <WeeklyChart weekData={weekData} onClick={(day: DayData) => setSelectedActivity(day.activity ?? null)} />
