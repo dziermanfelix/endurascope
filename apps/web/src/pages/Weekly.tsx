@@ -2,9 +2,9 @@ import { useState, useMemo, useEffect } from 'react';
 import { calculateAveragePaceFromSummary, formatTimeFromHours, isSameDay } from '../util/time';
 import { getWeekStart, getWeekDataForStart, DayData } from '../util/week';
 import { useActivities } from '../contexts/ActivitiesContext';
-import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
 import { filterActivitiesByBlock } from '../util/trainingBlockFilter';
+import { TrainingBlockSelector } from '../components/TrainingBlockSelector';
 import { ArrowIcon } from '../icons/ArrowIcon';
 import WeeklyChart from '../components/WeeklyChart';
 import { Activity } from '../types/activity';
@@ -20,8 +20,7 @@ export function Weekly() {
     availableWeeks,
     getWeekData,
   } = useActivities();
-  const { trainingBlocks } = useTrainingBlocks();
-  const { selectedTrainingBlock, setSelectedTrainingBlock } = useSelectedTrainingBlock();
+  const { selectedTrainingBlock } = useSelectedTrainingBlock();
 
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
@@ -119,25 +118,7 @@ export function Weekly() {
     <>
       <div className='flex justify-between items-center mb-6'>
         <h2 className='text-2xl font-bold text-gray-900'>Weekly Training</h2>
-        <div className='w-1/4 min-w-[180px]'>
-          <select
-            className='w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer'
-            value={selectedTrainingBlock?.identifier ?? ''}
-            onChange={(e) => {
-              const identifier = e.target.value;
-              const block =
-                identifier === '' ? null : (trainingBlocks.find((tb) => tb.identifier === identifier) ?? null);
-              setSelectedTrainingBlock(block);
-            }}
-          >
-            <option value=''>All Training Blocks</option>
-            {trainingBlocks.map((tb) => (
-              <option key={tb.id} value={tb.identifier}>
-                {tb.identifier}
-              </option>
-            ))}
-          </select>
-        </div>
+        <TrainingBlockSelector />
       </div>
       <div className='space-y-6'>
         <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6'>

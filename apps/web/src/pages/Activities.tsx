@@ -3,15 +3,14 @@ import { ActivityCard } from '../components/ActivityCard';
 import { useActivities } from '../contexts/ActivitiesContext';
 import { Activity } from '../types/activity';
 import { ActivityModal } from '../components/ActivityModal';
-import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
 import { filterActivitiesByBlock } from '../util/trainingBlockFilter';
+import { TrainingBlockSelector } from '../components/TrainingBlockSelector';
 
 export function Activities() {
   const { activities, isLoading, isError, refetch, isRefetching } = useActivities();
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
-  const { trainingBlocks } = useTrainingBlocks();
-  const { selectedTrainingBlock, setSelectedTrainingBlock } = useSelectedTrainingBlock();
+  const { selectedTrainingBlock } = useSelectedTrainingBlock();
 
   const filteredActivities = filterActivitiesByBlock(activities, selectedTrainingBlock);
 
@@ -19,25 +18,7 @@ export function Activities() {
     <>
       <div className='flex justify-between items-center mb-6'>
         <h2 className='text-2xl font-bold text-gray-900'>Activities</h2>
-        <div className='w-1/4 min-w-[180px]'>
-          <select
-            className='w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer'
-            value={selectedTrainingBlock?.identifier ?? ''}
-            onChange={(e) => {
-              const identifier = e.target.value;
-              const block =
-                identifier === '' ? null : (trainingBlocks.find((tb) => tb.identifier === identifier) ?? null);
-              setSelectedTrainingBlock(block);
-            }}
-          >
-            <option value=''>All Training Blocks</option>
-            {trainingBlocks.map((tb) => (
-              <option key={tb.id} value={tb.identifier}>
-                {tb.identifier}
-              </option>
-            ))}
-          </select>
-        </div>
+        <TrainingBlockSelector />
       </div>
 
       {!isLoading && !isError && (
