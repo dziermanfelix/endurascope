@@ -5,6 +5,7 @@ import { Weekly } from './pages/Weekly';
 import { TrainingBlocks } from './pages/TrainingBlocks';
 import { ActivitiesProvider } from './contexts/ActivitiesContext';
 import { TrainingBlocksProvider } from './contexts/TrainingBlocksContext';
+import { SelectedTrainingBlockProvider } from './contexts/SelectedTrainingBlockContext';
 
 function Navigation() {
   const location = useLocation();
@@ -70,12 +71,14 @@ function App() {
           <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
             <ActivitiesProvider>
               <TrainingBlocksProvider>
-                <Routes>
-                  <Route path='/' element={<Weekly />} />
-                  <Route path='/weekly' element={<Weekly />} />
-                  <Route path='/activities' element={<Activities />} />
-                  <Route path='/training-blocks' element={<TrainingBlocks />} />
-                </Routes>
+                <SelectedTrainingBlockProvider>
+                  <Routes>
+                    <Route path='/' element={<Weekly />} />
+                    <Route path='/weekly' element={<Weekly />} />
+                    <Route path='/activities' element={<Activities />} />
+                    <Route path='/training-blocks' element={<TrainingBlocks />} />
+                  </Routes>
+                </SelectedTrainingBlockProvider>
               </TrainingBlocksProvider>
             </ActivitiesProvider>
           </div>

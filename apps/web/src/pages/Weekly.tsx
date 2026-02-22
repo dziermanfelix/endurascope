@@ -3,11 +3,12 @@ import { calculateAveragePaceFromSummary, formatTimeFromHours, isSameDay } from 
 import { getWeekStart, getWeekDataForStart, DayData } from '../util/week';
 import { useActivities } from '../contexts/ActivitiesContext';
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
+import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
+import { filterActivitiesByBlock } from '../util/trainingBlockFilter';
 import { ArrowIcon } from '../icons/ArrowIcon';
 import WeeklyChart from '../components/WeeklyChart';
 import { Activity } from '../types/activity';
 import { ActivityModal } from '../components/ActivityModal';
-import { TrainingBlock } from '../api/training-blocks';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -20,18 +21,15 @@ export function Weekly() {
     getWeekData,
   } = useActivities();
   const { trainingBlocks } = useTrainingBlocks();
+  const { selectedTrainingBlock, setSelectedTrainingBlock } = useSelectedTrainingBlock();
 
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
-  const [selectedTrainingBlock, setSelectedTrainingBlock] = useState<TrainingBlock | null>(null);
 
   const currentCalendarWeekStart = useMemo(() => getWeekStart(new Date()), []);
 
   const filteredActivities = useMemo(
-    () =>
-      selectedTrainingBlock
-        ? activities.filter((a) => a.name?.toLowerCase().startsWith(selectedTrainingBlock.identifier.toLowerCase()))
-        : activities,
+    () => filterActivitiesByBlock(activities, selectedTrainingBlock),
     [activities, selectedTrainingBlock],
   );
 
@@ -124,16 +122,17 @@ export function Weekly() {
         <div className='w-1/4 min-w-[180px]'>
           <select
             className='w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer'
-            value={selectedTrainingBlock?.id ?? ''}
+            value={selectedTrainingBlock?.identifier ?? ''}
             onChange={(e) => {
-              const id = e.target.value;
-              const block = id === '' ? null : (trainingBlocks.find((tb) => tb.id === id) ?? null);
+              const identifier = e.target.value;
+              const block =
+                identifier === '' ? null : (trainingBlocks.find((tb) => tb.identifier === identifier) ?? null);
               setSelectedTrainingBlock(block);
             }}
           >
             <option value=''>All Training Blocks</option>
             {trainingBlocks.map((tb) => (
-              <option key={tb.id} value={tb.id}>
+              <option key={tb.id} value={tb.identifier}>
                 {tb.identifier}
               </option>
             ))}
