@@ -33,10 +33,7 @@ export function isActivityInBlock(activity: Activity, block: TrainingBlock): boo
 /**
  * Returns all activities if block is null; otherwise returns activities whose date is in the block window.
  */
-export function filterActivitiesByBlock(
-  activities: Activity[],
-  block: TrainingBlock | null,
-): Activity[] {
+export function filterActivitiesByBlock(activities: Activity[], block: TrainingBlock | null): Activity[] {
   if (!block) return activities;
   return activities.filter((a) => isActivityInBlock(a, block));
 }

@@ -4,6 +4,7 @@ import { CreateTrainingBlockModal } from '../components/CreateTrainingBlockModal
 import { EditTrainingBlockModal } from '../components/EditTrainingBlockModal';
 import CreateIcon from '../icons/CreateIcon';
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
+import { byStartDateDesc } from '../util/trainingBlockSort';
 
 export function TrainingBlocks() {
   const { trainingBlocks, loadTrainingBlocks, isLoading, isError } = useTrainingBlocks();
@@ -12,6 +13,8 @@ export function TrainingBlocks() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<TrainingBlock | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const sortedBlocks = [...trainingBlocks].sort(byStartDateDesc);
 
   const handleEdit = (block: TrainingBlock) => {
     setSelectedBlock(block);
@@ -72,16 +75,16 @@ export function TrainingBlocks() {
         </div>
       )}
 
-      {!isLoading && trainingBlocks.length === 0 && (
+      {!isLoading && sortedBlocks.length === 0 && (
         <div className='bg-white rounded-lg shadow-md p-8 text-center'>
           <p className='text-gray-600 text-lg'>No training blocks found.</p>
           <p className='text-gray-500 mt-2'>Create your first training block to get started.</p>
         </div>
       )}
 
-      {!isLoading && trainingBlocks.length > 0 && (
+      {!isLoading && sortedBlocks.length > 0 && (
         <div className='space-y-4'>
-          {trainingBlocks.map((block) => {
+          {sortedBlocks.map((block) => {
             const weeksRemaining = calculateWeeksRemaining(block.raceDate);
             const isPast = weeksRemaining < 0;
 
