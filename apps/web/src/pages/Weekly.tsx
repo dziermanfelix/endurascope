@@ -3,7 +3,7 @@ import { calculateAveragePaceFromSummary, formatTimeFromHours, isSameDay } from 
 import { getWeekStart, getWeekDataForStart, DayData } from '../util/week';
 import { useActivities } from '../contexts/ActivitiesContext';
 import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
-import { filterActivitiesByBlock } from '../util/trainingBlockFilter';
+import { filterActivitiesByBlock } from '../util/trainingBlock';
 import { TrainingBlockSelector } from '../components/TrainingBlockSelector';
 import { ArrowIcon } from '../icons/ArrowIcon';
 import WeeklyChart from '../components/WeeklyChart';

@@ -1,6 +1,6 @@
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
-import { byStartDateDesc } from '../util/trainingBlockSort';
+import { byStartDateDesc } from '../util/trainingBlock';
 
 export function TrainingBlockSelector() {
   const { trainingBlocks } = useTrainingBlocks();

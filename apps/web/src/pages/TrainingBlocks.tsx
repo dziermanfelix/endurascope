@@ -4,7 +4,7 @@ import { CreateTrainingBlockModal } from '../components/CreateTrainingBlockModal
 import { EditTrainingBlockModal } from '../components/EditTrainingBlockModal';
 import CreateIcon from '../icons/CreateIcon';
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
-import { byStartDateDesc } from '../util/trainingBlockSort';
+import { byStartDateDesc } from '../util/trainingBlock';
 
 export function TrainingBlocks() {
   const { trainingBlocks, loadTrainingBlocks, isLoading, isError } = useTrainingBlocks();

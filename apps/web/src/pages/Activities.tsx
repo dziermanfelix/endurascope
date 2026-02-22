@@ -4,7 +4,7 @@ import { useActivities } from '../contexts/ActivitiesContext';
 import { Activity } from '../types/activity';
 import { ActivityModal } from '../components/ActivityModal';
 import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
-import { filterActivitiesByBlock } from '../util/trainingBlockFilter';
+import { filterActivitiesByBlock } from '../util/trainingBlock';
 import { TrainingBlockSelector } from '../components/TrainingBlockSelector';
 
 export function Activities() {

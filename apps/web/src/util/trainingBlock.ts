@@ -37,3 +37,13 @@ export function filterActivitiesByBlock(activities: Activity[], block: TrainingB
   if (!block) return activities;
   return activities.filter((a) => isActivityInBlock(a, block));
 }
+
+/**
+ * Sort by startDate descending
+ * @param a Sortable object with a startDate property
+ * @param b Sortable object with a startDate property
+ * @returns Difference in milliseconds between the startDates of a and b
+ */
+export function byStartDateDesc(a: { startDate: Date | string }, b: { startDate: Date | string }): number {
+  return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+}
