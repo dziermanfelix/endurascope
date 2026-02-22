@@ -1,9 +1,14 @@
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
 
+function byStartDateDesc(a: { startDate: Date | string }, b: { startDate: Date | string }): number {
+  return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+}
+
 export function TrainingBlockSelector() {
   const { trainingBlocks } = useTrainingBlocks();
   const { selectedTrainingBlock, setSelectedTrainingBlock } = useSelectedTrainingBlock();
+  const sortedBlocks = [...trainingBlocks].sort(byStartDateDesc);
 
   return (
     <div className='w-1/4 min-w-[180px]'>
@@ -17,7 +22,7 @@ export function TrainingBlockSelector() {
         }}
       >
         <option value=''>All Training Blocks</option>
-        {trainingBlocks.map((tb) => (
+        {sortedBlocks.map((tb) => (
           <option key={tb.id} value={tb.identifier}>
             {tb.identifier}
           </option>
