@@ -10,15 +10,6 @@ export async function fetchActivities(): Promise<Activity[]> {
   return response.json();
 }
 
-export async function fetchActivityCount(): Promise<number> {
-  const response = await fetch(`${API_BASE_URL}/activities/count`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch activity count');
-  }
-  const data = await response.json();
-  return data.count;
-}
-
 export async function refetchActivitiesFromStrava(): Promise<{ success: boolean; fetched: number; total: number }> {
   const response = await fetch(`${API_BASE_URL}/activities/refetch`, {
     method: 'POST',
@@ -29,7 +20,10 @@ export async function refetchActivitiesFromStrava(): Promise<{ success: boolean;
   return response.json();
 }
 
-export async function updateActivityName(stravaId: string, name: string): Promise<{ success: boolean; message: string }> {
+export async function updateActivityName(
+  stravaId: string,
+  name: string,
+): Promise<{ success: boolean; message: string }> {
   const response = await fetch(`${API_BASE_URL}/activities/${stravaId}`, {
     method: 'PUT',
     headers: {

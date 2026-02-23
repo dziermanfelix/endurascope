@@ -20,12 +20,6 @@ export interface WeekSummary {
   paceActivities: number;
 }
 
-export interface WeekSummaryItem {
-  weekStart: Date;
-  weekNumber: number;
-  summary: WeekSummary;
-}
-
 const WEEKDAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
 export function getWeekStart(date: Date): Date {
