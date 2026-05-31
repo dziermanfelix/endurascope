@@ -7,7 +7,7 @@ import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockConte
 import { filterActivitiesByBlock } from '../util/trainingBlock';
 import { TrainingBlockSelector } from '../components/TrainingBlockSelector';
 import { updateActivityName } from '../api/activities';
-import { getBlockRunActivities, planMorningRunRenames } from '../util/activityName';
+import { getBlockRunActivities, planMorningRunRenames, shouldShowCorrectNamesButton } from '../util/activityName';
 
 export function Activities() {
   const { activities, isLoading, isError, refetch, isRefetching, loadActivities } = useActivities();
@@ -23,6 +23,13 @@ export function Activities() {
   const renamePlan = selectedTrainingBlock
     ? planMorningRunRenames(filteredActivities, selectedTrainingBlock.identifier)
     : [];
+  const showCorrectNamesButton = selectedTrainingBlock
+    ? shouldShowCorrectNamesButton(
+        filteredActivities,
+        selectedTrainingBlock.identifier,
+        selectedTrainingBlock.raceDate,
+      )
+    : false;
 
   const handleRenameMorningRuns = async () => {
     if (renamePlan.length === 0) return;
@@ -101,25 +108,26 @@ export function Activities() {
             ))}
           </div>
 
-          <div className='mt-6 flex flex-col items-start gap-2'>
-            <button
-              onClick={handleRenameMorningRuns}
-              disabled={isRenaming || !selectedTrainingBlock || renamePlan.length === 0}
-              className='bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200'
-            >
-              {isRenaming ? 'Renaming...' : `Correct Activity Names (${renamePlan.length})`}
-            </button>
-            {!selectedTrainingBlock && (
-              <p className='text-sm text-gray-500'>Select a training block to renumber runs.</p>
-            )}
-            {selectedTrainingBlock && blockRuns.length === 0 && (
-              <p className='text-sm text-gray-500'>No Morning Run or numbered run activities in this training block.</p>
-            )}
-            {selectedTrainingBlock && blockRuns.length > 0 && renamePlan.length === 0 && (
-              <p className='text-sm text-gray-500'>Block runs are already numbered sequentially.</p>
-            )}
-            {renameMessage && <p className='text-sm text-gray-600'>{renameMessage}</p>}
-          </div>
+          {showCorrectNamesButton && (
+            <div className='mt-6 flex flex-col items-start gap-2'>
+              <button
+                onClick={handleRenameMorningRuns}
+                disabled={isRenaming || renamePlan.length === 0}
+                className='bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200'
+              >
+                {isRenaming ? 'Renaming...' : `Correct Activity Names (${renamePlan.length})`}
+              </button>
+              {blockRuns.length === 0 && (
+                <p className='text-sm text-gray-500'>
+                  No Morning Run or numbered run activities in this training block.
+                </p>
+              )}
+              {blockRuns.length > 0 && renamePlan.length === 0 && (
+                <p className='text-sm text-gray-500'>Block runs are already numbered sequentially.</p>
+              )}
+              {renameMessage && <p className='text-sm text-gray-600'>{renameMessage}</p>}
+            </div>
+          )}
         </>
       )}
 

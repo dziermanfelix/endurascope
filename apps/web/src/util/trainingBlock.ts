@@ -47,3 +47,11 @@ export function filterActivitiesByBlock(activities: Activity[], block: TrainingB
 export function byStartDateDesc(a: { startDate: Date | string }, b: { startDate: Date | string }): number {
   return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
 }
+
+export function hasRacePassed(raceDate: Date | string): boolean {
+  const race = new Date(raceDate);
+  const today = new Date();
+  race.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  return race < today;
+}
