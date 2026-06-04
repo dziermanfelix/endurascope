@@ -2,7 +2,7 @@ import { ReactNode, createContext, useContext, useState, useEffect, useMemo, use
 import type { Activity } from '../types/activity';
 import type { DayData, WeekSummary } from '../util/week';
 import { getWeekStart, getWeekDataForStart } from '../util/week';
-import { fetchActivities, refetchActivitiesFromStrava } from '../api/activities';
+import { fetchActivities, refetchActivitiesFromStrava, type RefetchActivitiesResult } from '../api/activities';
 
 interface ActivitiesProviderProps {
   children: ReactNode;
@@ -12,7 +12,7 @@ interface ActivitiesContextType {
   activities: Activity[];
   loadActivities: () => Promise<void>;
   isLoading: boolean;
-  refetch: () => Promise<{ fetched: number; total: number } | null>;
+  refetch: (options?: { full?: boolean }) => Promise<RefetchActivitiesResult | null>;
   isRefetching: boolean;
   isError: boolean;
   availableWeeks: Date[];
@@ -41,12 +41,13 @@ export const ActivitiesProvider = ({ children }: ActivitiesProviderProps) => {
     }
   }, []);
 
-  const refetch = useCallback(async () => {
+  const refetch = useCallback(async (options?: { full?: boolean }) => {
     try {
       setIsRefetching(true);
       setIsError(false);
-      const result = await refetchActivitiesFromStrava();
-      await loadActivities();
+      const result = await refetchActivitiesFromStrava(options);
+      const data = await fetchActivities();
+      setActivities(data);
       return result;
     } catch (err) {
       setIsError(true);

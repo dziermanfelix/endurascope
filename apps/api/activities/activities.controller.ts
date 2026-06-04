@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ActivityService } from '../strava/activity.service';
 import { StravaService } from '../strava/strava.service';
 
@@ -36,13 +36,33 @@ export class ActivitiesController {
   }
 
   @Post('refetch')
-  async refetchActivities() {
-    const activities = await this.stravaService.fetchActivities();
-    await this.activityService.saveActivities(activities);
+  async refetchActivities(@Query('full') full?: string) {
+    const isFull = full === 'true';
+    let mode: 'incremental' | 'full';
+    let activities;
+
+    if (isFull) {
+      mode = 'full';
+      activities = await this.stravaService.fetchActivities({ full: true });
+    } else {
+      const since = await this.activityService.getLatestActivityStartDate();
+      if (since) {
+        mode = 'incremental';
+        activities = await this.stravaService.fetchActivities({ after: since });
+      } else {
+        mode = 'full';
+        activities = await this.stravaService.fetchActivities({ full: true });
+      }
+    }
+
+    const { created, updated } = await this.activityService.saveActivities(activities);
     const count = await this.activityService.getActivityCount();
     return {
       success: true,
+      mode,
       fetched: activities.length,
+      created,
+      updated,
       total: count,
     };
   }

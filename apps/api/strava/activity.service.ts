@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StravaActivity, StravaService } from './strava.service';
 
+export interface SaveActivitiesResult {
+  created: number;
+  updated: number;
+}
+
 @Injectable()
 export class ActivityService {
   constructor(
@@ -9,27 +14,47 @@ export class ActivityService {
     private stravaService: StravaService
   ) {}
 
-  async saveActivities(activities: StravaActivity[]): Promise<void> {
-    if (activities.length === 0) {
-      return;
+  async getLatestActivityStartDate(): Promise<Date | null> {
+    const latest = await this.prisma.activity.findFirst({
+      where: { type: 'Run' },
+      orderBy: { startDate: 'desc' },
+      select: { startDate: true },
+    });
+    return latest?.startDate ?? null;
+  }
+
+  async saveActivities(activities: StravaActivity[]): Promise<SaveActivitiesResult> {
+    const result = { created: 0, updated: 0 };
+    const runs = activities.filter((a) => a.type === 'Run');
+    if (runs.length === 0) {
+      return result;
     }
 
-    for (const activity of activities) {
-      if (activity.type !== 'Run') continue; // process runs only
-      try {
-        let detailedActivity: StravaActivity | null = null;
-        let activityType = activity.type || null;
+    const stravaIds = runs.map((a) => BigInt(a.id));
+    const existing = await this.prisma.activity.findMany({
+      where: { stravaId: { in: stravaIds } },
+      select: { stravaId: true },
+    });
+    const existingIds = new Set(existing.map((a) => a.stravaId.toString()));
 
-        try {
-          detailedActivity = await this.stravaService.getActivityById(activity.id);
-          activity.average_heartrate = detailedActivity.average_heartrate ?? activity.average_heartrate;
-          activity.calories = detailedActivity.calories ?? activity.calories;
-          activity.average_speed = detailedActivity.average_speed ?? activity.average_speed;
-        } catch (error) {
-          console.warn(
-            `Failed to fetch detailed info for activity (${activity.id}|${activity.name}), using summary data only`
-          );
+    for (const activity of runs) {
+      try {
+        const activityType = activity.type || null;
+        const isNew = !existingIds.has(activity.id.toString());
+
+        if (isNew) {
+          try {
+            const detailedActivity = await this.stravaService.getActivityById(activity.id);
+            activity.average_heartrate = detailedActivity.average_heartrate ?? activity.average_heartrate;
+            activity.calories = detailedActivity.calories ?? activity.calories;
+            activity.average_speed = detailedActivity.average_speed ?? activity.average_speed;
+          } catch {
+            console.warn(
+              `Failed to fetch detailed info for activity (${activity.id}|${activity.name}), using summary data only`
+            );
+          }
         }
+
         await this.prisma.activity.upsert({
           where: { stravaId: BigInt(activity.id) },
           create: {
@@ -60,10 +85,18 @@ export class ActivityService {
             startDateLocal: activity.start_date_local ? new Date(activity.start_date_local) : null,
           },
         });
+
+        if (isNew) {
+          result.created += 1;
+        } else {
+          result.updated += 1;
+        }
       } catch (error) {
         console.error(`Failed to save activity ${activity.id}:`, error);
       }
     }
+
+    return result;
   }
 
   async getActivityCount(): Promise<number> {

@@ -38,6 +38,13 @@ export interface StravaActivity {
   external_id: string | null;
 }
 
+export interface FetchActivitiesOptions {
+  after?: Date;
+  full?: boolean;
+}
+
+const ACTIVITIES_PER_PAGE = 200;
+
 @Injectable()
 export class StravaService {
   private readonly apiClient: AxiosInstance;
@@ -140,72 +147,85 @@ export class StravaService {
     this.apiClient.defaults.headers.common['Authorization'] = `Bearer ${this.accessToken}`;
   }
 
-  async fetchActivities(page: number = 1, perPage: number = 30): Promise<StravaActivity[]> {
+  async fetchActivities(options?: FetchActivitiesOptions): Promise<StravaActivity[]> {
     if (!this.accessToken) {
       await this.initializeToken();
     }
 
-    let activities = [];
-    let currPage = page;
+    if (options?.after) {
+      return this.fetchActivitiesAfter(options.after);
+    }
+
+    return this.fetchActivitiesFull();
+  }
+
+  private async fetchActivitiesFull(): Promise<StravaActivity[]> {
+    const activities: StravaActivity[] = [];
+    let page = 1;
 
     while (true) {
-      try {
-        const response = await this.apiClient.get('/athlete/activities', {
-          params: {
-            page: currPage,
-            per_page: perPage,
-          },
-        });
-        const data = response.data;
-        if (!data || data.length === 0) break;
-        currPage += 1;
-        activities.push(...data);
-      } catch (error) {
-        if (error.response?.status === 401) {
-          const errors = error.response?.data?.errors || [];
-          const missingPermission = errors.find(
-            (e: any) => e.field === 'activity:read_permission' && e.code === 'missing' && e.resource === 'AccessToken'
-          );
-          if (missingPermission) {
-            if (!this.oauthService) {
-              throw new Error(
-                'Token missing required permissions. Please re-authorize your application with the scope activity:read_all.'
-              );
-            }
-            await this.oauthService.authorize();
-            await this.initializeToken();
-            const retryResponse = await this.apiClient.get('/athlete/activities', {
-              params: {
-                page: currPage,
-                per_page: perPage,
-              },
-            });
-            const data = retryResponse.data;
-            if (!data || data.length === 0) break;
-            currPage += 1;
-            activities.push(...data);
-          }
-          await this.initializeToken();
-          const retryResponse = await this.apiClient.get('/athlete/activities', {
-            params: {
-              page: currPage,
-              per_page: perPage,
-            },
-          });
-          const data = retryResponse.data;
-          if (!data || data.length === 0) break;
-          currPage += 1;
-          activities.push(...data);
-        }
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        throw new Error(`Failed to fetch activities: ${errorMessage}`);
-      }
+      const batch = await this.getAthleteActivities({ page, per_page: ACTIVITIES_PER_PAGE });
+      if (batch.length === 0) break;
+      activities.push(...batch);
+      if (batch.length < ACTIVITIES_PER_PAGE) break;
+      page += 1;
     }
+
     return activities;
   }
 
+  private async fetchActivitiesAfter(since: Date): Promise<StravaActivity[]> {
+    const activities: StravaActivity[] = [];
+    let afterEpoch = Math.floor(since.getTime() / 1000);
+
+    while (true) {
+      const batch = await this.getAthleteActivities({ after: afterEpoch, per_page: ACTIVITIES_PER_PAGE });
+      if (batch.length === 0) break;
+      activities.push(...batch);
+      if (batch.length < ACTIVITIES_PER_PAGE) break;
+
+      const last = batch[batch.length - 1];
+      const lastEpoch = Math.floor(new Date(last.start_date).getTime() / 1000);
+      if (lastEpoch <= afterEpoch) break;
+      afterEpoch = lastEpoch;
+    }
+
+    return activities;
+  }
+
+  private async getAthleteActivities(params: Record<string, number>): Promise<StravaActivity[]> {
+    try {
+      const response = await this.apiClient.get<StravaActivity[]>('/athlete/activities', { params });
+      return response.data ?? [];
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        const errors = error.response?.data?.errors || [];
+        const missingPermission = errors.find(
+          (e: { field?: string; code?: string; resource?: string }) =>
+            e.field === 'activity:read_permission' && e.code === 'missing' && e.resource === 'AccessToken'
+        );
+
+        if (missingPermission) {
+          if (!this.oauthService) {
+            throw new Error(
+              'Token missing required permissions. Please re-authorize your application with the scope activity:read_all.'
+            );
+          }
+          await this.oauthService.authorize();
+        }
+
+        await this.initializeToken();
+        const retryResponse = await this.apiClient.get<StravaActivity[]>('/athlete/activities', { params });
+        return retryResponse.data ?? [];
+      }
+
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to fetch activities: ${errorMessage}`);
+    }
+  }
+
   async printActivities(): Promise<void> {
-    const activities = await this.fetchActivities();
+    const activities = await this.fetchActivities({ full: true });
     // This method is kept for backward compatibility but logging is removed
   }
 

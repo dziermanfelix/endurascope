@@ -24,11 +24,7 @@ export function Activities() {
     ? planMorningRunRenames(filteredActivities, selectedTrainingBlock.identifier)
     : [];
   const showCorrectNamesButton = selectedTrainingBlock
-    ? shouldShowCorrectNamesButton(
-        filteredActivities,
-        selectedTrainingBlock.identifier,
-        selectedTrainingBlock.raceDate,
-      )
+    ? shouldShowCorrectNamesButton(filteredActivities, selectedTrainingBlock.identifier, selectedTrainingBlock.raceDate)
     : false;
 
   const handleRenameMorningRuns = async () => {
@@ -71,7 +67,7 @@ export function Activities() {
             disabled={isRefetching}
             className='bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200'
           >
-            {isRefetching ? 'Refetching...' : 'Refetch from Strava'}
+            {isRefetching ? 'Fetching...' : 'Fetch new runs'}
           </button>
         </div>
       )}

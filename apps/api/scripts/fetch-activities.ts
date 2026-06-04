@@ -6,16 +6,33 @@ import { ActivityService } from '../strava/activity.service';
 async function fetchActivities() {
   const app = await NestFactory.createApplicationContext(AppModule);
 
-  // Get services
   const stravaService = app.get(StravaService);
   const activityService = app.get(ActivityService);
+  const isFull = process.argv.includes('--full');
 
-  const activities = await stravaService.fetchActivities();
+  let mode: 'incremental' | 'full';
+  let activities;
+
+  if (isFull) {
+    mode = 'full';
+    activities = await stravaService.fetchActivities({ full: true });
+  } else {
+    const since = await activityService.getLatestActivityStartDate();
+    if (since) {
+      mode = 'incremental';
+      activities = await stravaService.fetchActivities({ after: since });
+    } else {
+      mode = 'full';
+      activities = await stravaService.fetchActivities({ full: true });
+    }
+  }
+
+  console.log(`Sync mode: ${mode}, fetched ${activities.length} activities from Strava`);
 
   if (activities.length > 0) {
-    await activityService.saveActivities(activities);
+    const { created, updated } = await activityService.saveActivities(activities);
     const count = await activityService.getActivityCount();
-    console.log(`Total activities in database: ${count}`);
+    console.log(`Saved: ${created} created, ${updated} updated. Total runs in database: ${count}`);
   }
 
   await app.close();

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import { Activities } from './pages/Activities';
 import { Weekly } from './pages/Weekly';
 import { TrainingBlocks } from './pages/TrainingBlocks';
+import { Admin } from './pages/Admin';
 import { ActivitiesProvider } from './contexts/ActivitiesContext';
 import { TrainingBlocksProvider } from './contexts/TrainingBlocksContext';
 import { SelectedTrainingBlockProvider } from './contexts/SelectedTrainingBlockContext';
@@ -44,6 +45,16 @@ function Navigation() {
           >
             Training Blocks
           </Link>
+          <Link
+            to='/admin'
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              location.pathname === '/admin'
+                ? 'border-orange-600 text-orange-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Admin
+          </Link>
         </div>
       </div>
     </nav>
@@ -77,6 +88,7 @@ function App() {
                     <Route path='/weekly' element={<Weekly />} />
                     <Route path='/activities' element={<Activities />} />
                     <Route path='/training-blocks' element={<TrainingBlocks />} />
+                    <Route path='/admin' element={<Admin />} />
                   </Routes>
                 </SelectedTrainingBlockProvider>
               </TrainingBlocksProvider>

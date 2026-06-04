@@ -10,8 +10,23 @@ export async function fetchActivities(): Promise<Activity[]> {
   return response.json();
 }
 
-export async function refetchActivitiesFromStrava(): Promise<{ success: boolean; fetched: number; total: number }> {
-  const response = await fetch(`${API_BASE_URL}/activities/refetch`, {
+export interface RefetchActivitiesResult {
+  success: boolean;
+  mode: 'incremental' | 'full';
+  fetched: number;
+  created: number;
+  updated: number;
+  total: number;
+}
+
+export async function refetchActivitiesFromStrava(options?: {
+  full?: boolean;
+}): Promise<RefetchActivitiesResult> {
+  const url = new URL(`${API_BASE_URL}/activities/refetch`);
+  if (options?.full) {
+    url.searchParams.set('full', 'true');
+  }
+  const response = await fetch(url.toString(), {
     method: 'POST',
   });
   if (!response.ok) {
