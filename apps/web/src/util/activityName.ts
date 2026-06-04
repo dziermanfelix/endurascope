@@ -1,6 +1,5 @@
 import type { Activity } from '../types/activity';
 import { parseActivityDate } from './time';
-import { hasRacePassed } from './trainingBlock';
 
 export const MORNING_RUN_NAME = 'Morning Run';
 
@@ -69,19 +68,8 @@ export function planMorningRunRenames(
     .filter(({ activity, newName }) => activity.name?.trim().toLowerCase() !== newName.toLowerCase());
 }
 
-export function shouldShowCorrectNamesButton(
-  blockActivities: Activity[],
-  identifier: string,
-  raceDate: Date | string,
-): boolean {
+export function shouldShowCorrectNamesButton(blockActivities: Activity[], identifier: string): boolean {
   const renamePlan = planMorningRunRenames(blockActivities, identifier);
-
-  // Always show when there are names to fix (e.g. leftover Morning Runs after the race).
   if (renamePlan.length > 0) return true;
-
-  if (!hasRacePassed(raceDate)) {
-    return getBlockRunActivities(blockActivities, identifier).length > 0;
-  }
-
   return false;
 }
