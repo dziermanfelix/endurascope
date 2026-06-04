@@ -4,6 +4,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import axios, { AxiosInstance } from 'axios';
 import { StravaOAuthService } from './strava-oauth.service';
 
+export interface StravaSplit {
+  split: number;
+  moving_time: number;
+  elapsed_time: number;
+  average_speed: number;
+  distance: number;
+  elevation_difference: number;
+  pace_zone?: number;
+}
+
 export interface StravaActivity {
   id: number;
   name: string;
@@ -14,6 +24,7 @@ export interface StravaActivity {
   average_heartrate?: number | null;
   calories?: number | null;
   average_speed?: number | null;
+  splits_standard?: StravaSplit[] | null;
   type: string;
   sport_type?: string;
   start_date: string;

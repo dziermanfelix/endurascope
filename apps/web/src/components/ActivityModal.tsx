@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity } from '../types/activity';
+import { Activity, ActivitySplit } from '../types/activity';
 import { formatDate, formatPace, formatTimeFromSeconds } from '../util/time';
 import CloseIcon from '../icons/CloseIcon';
 import { updateActivityName } from '../api/activities';
@@ -85,6 +85,32 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
   const averageSpeedMph = activity.averageSpeed !== null ? (activity.averageSpeed * 2.23694).toFixed(1) : null;
   const elevationGainFeet =
     activity.totalElevationGain !== null ? Math.round(activity.totalElevationGain * 3.28084) : null;
+
+  const splits = activity.splitsStandard ?? [];
+  const fastestSplitIndex =
+    splits.length > 0
+      ? splits.reduce((best, s, i) => (s.average_speed > splits[best].average_speed ? i : best), 0)
+      : -1;
+  const slowestSplitIndex =
+    splits.length > 0
+      ? splits.reduce((worst, s, i) => (s.average_speed < splits[worst].average_speed ? i : worst), 0)
+      : -1;
+
+  const formatSplitElevation = (meters: number) => {
+    const feet = Math.round(meters * 3.28084);
+    if (feet === 0) return '—';
+    return feet > 0 ? `+${feet} ft` : `${feet} ft`;
+  };
+
+  const isPartialMile = (split: ActivitySplit) => split.distance < 1500;
+
+  const formatSplitMileLabel = (split: ActivitySplit) => {
+    if (!isPartialMile(split)) {
+      return String(split.split);
+    }
+    const miles = split.distance / 1609.344;
+    return `${split.split} (${miles.toFixed(2)} mi)`;
+  };
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center p-4' onClick={onClose}>
@@ -222,6 +248,53 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
                 <p className='text-xl font-semibold text-gray-900'>{activity.calories.toLocaleString()}</p>
               </div>
             ) : null}
+          </div>
+
+          <div>
+            <h4 className='text-sm font-semibold text-gray-900 mb-3'>Mile splits</h4>
+            {splits.length > 0 ? (
+              <div className='overflow-x-auto rounded-lg border border-gray-200'>
+                <table className='w-full text-sm'>
+                  <thead>
+                    <tr className='bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wide'>
+                      <th className='px-3 py-2 font-medium'>Mile</th>
+                      <th className='px-3 py-2 font-medium'>Pace</th>
+                      <th className='px-3 py-2 font-medium'>Time</th>
+                      <th className='px-3 py-2 font-medium'>Elev</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {splits.map((split, index) => {
+                      const rowPace = formatPace(split.average_speed);
+                      const isFastest = index === fastestSplitIndex && splits.length > 1;
+                      const isSlowest = index === slowestSplitIndex && splits.length > 1;
+                      const rowClass = isFastest
+                        ? 'bg-green-50'
+                        : isSlowest
+                          ? 'bg-amber-50'
+                          : 'bg-white';
+
+                      return (
+                        <tr key={split.split} className={`border-t border-gray-100 ${rowClass}`}>
+                          <td className='px-3 py-2 font-medium text-gray-900'>
+                            {formatSplitMileLabel(split)}
+                          </td>
+                          <td className='px-3 py-2 text-gray-900'>{rowPace ?? '—'}</td>
+                          <td className='px-3 py-2 text-gray-900'>
+                            {formatTimeFromSeconds(split.moving_time)}
+                          </td>
+                          <td className='px-3 py-2 text-gray-600'>
+                            {formatSplitElevation(split.elevation_difference)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className='text-sm text-gray-500'>No mile splits from Strava.</p>
+            )}
           </div>
         </div>
       </div>

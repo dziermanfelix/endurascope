@@ -1,3 +1,13 @@
+export interface ActivitySplit {
+  split: number;
+  moving_time: number;
+  elapsed_time: number;
+  average_speed: number;
+  distance: number;
+  elevation_difference: number;
+  pace_zone?: number;
+}
+
 export interface Activity {
   id: string;
   stravaId: bigint | string;
@@ -12,6 +22,7 @@ export interface Activity {
   type: string | null;
   startDate: string | null;
   startDateLocal: string | null;
+  splitsStandard: ActivitySplit[] | null;
   createdAt: string;
   updatedAt: string;
 }

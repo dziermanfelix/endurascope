@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { StravaActivity, StravaService } from './strava.service';
+import { StravaActivity, StravaService, StravaSplit } from './strava.service';
 
 export interface SaveActivitiesResult {
   created: number;
@@ -23,6 +24,21 @@ export class ActivityService {
     return latest?.startDate ?? null;
   }
 
+  private splitsToJson(splits: StravaSplit[] | null | undefined): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+    if (!splits || splits.length === 0) {
+      return Prisma.JsonNull;
+    }
+    return splits as unknown as Prisma.InputJsonValue;
+  }
+
+  private async applyDetailedActivity(activity: StravaActivity): Promise<void> {
+    const detailedActivity = await this.stravaService.getActivityById(activity.id);
+    activity.average_heartrate = detailedActivity.average_heartrate ?? activity.average_heartrate;
+    activity.calories = detailedActivity.calories ?? activity.calories;
+    activity.average_speed = detailedActivity.average_speed ?? activity.average_speed;
+    activity.splits_standard = detailedActivity.splits_standard ?? null;
+  }
+
   async saveActivities(activities: StravaActivity[]): Promise<SaveActivitiesResult> {
     const result = { created: 0, updated: 0 };
     const runs = activities.filter((a) => a.type === 'Run');
@@ -33,21 +49,20 @@ export class ActivityService {
     const stravaIds = runs.map((a) => BigInt(a.id));
     const existing = await this.prisma.activity.findMany({
       where: { stravaId: { in: stravaIds } },
-      select: { stravaId: true },
+      select: { stravaId: true, splitsStandard: true },
     });
-    const existingIds = new Set(existing.map((a) => a.stravaId.toString()));
+    const existingByStravaId = new Map(existing.map((a) => [a.stravaId.toString(), a]));
 
     for (const activity of runs) {
       try {
         const activityType = activity.type || null;
-        const isNew = !existingIds.has(activity.id.toString());
+        const existingRecord = existingByStravaId.get(activity.id.toString());
+        const isNew = !existingRecord;
+        const needsDetailedFetch = isNew || existingRecord?.splitsStandard == null;
 
-        if (isNew) {
+        if (needsDetailedFetch) {
           try {
-            const detailedActivity = await this.stravaService.getActivityById(activity.id);
-            activity.average_heartrate = detailedActivity.average_heartrate ?? activity.average_heartrate;
-            activity.calories = detailedActivity.calories ?? activity.calories;
-            activity.average_speed = detailedActivity.average_speed ?? activity.average_speed;
+            await this.applyDetailedActivity(activity);
           } catch {
             console.warn(
               `Failed to fetch detailed info for activity (${activity.id}|${activity.name}), using summary data only`
@@ -55,12 +70,14 @@ export class ActivityService {
           }
         }
 
+        const splitsStandard = this.splitsToJson(activity.splits_standard);
+
         await this.prisma.activity.upsert({
           where: { stravaId: BigInt(activity.id) },
           create: {
             stravaId: BigInt(activity.id),
             name: activity.name || null,
-            distance: activity.distance ? activity.distance / 1000 : null, // Convert to km
+            distance: activity.distance ? activity.distance / 1000 : null,
             movingTime: activity.moving_time || null,
             elapsedTime: activity.elapsed_time || null,
             totalElevationGain: activity.total_elevation_gain || null,
@@ -70,6 +87,7 @@ export class ActivityService {
             type: activityType,
             startDate: activity.start_date ? new Date(activity.start_date) : null,
             startDateLocal: activity.start_date_local ? new Date(activity.start_date_local) : null,
+            splitsStandard,
           },
           update: {
             name: activity.name || null,
@@ -83,6 +101,7 @@ export class ActivityService {
             type: activityType,
             startDate: activity.start_date ? new Date(activity.start_date) : null,
             startDateLocal: activity.start_date_local ? new Date(activity.start_date_local) : null,
+            ...(needsDetailedFetch && { splitsStandard }),
           },
         });
 
@@ -113,11 +132,11 @@ export class ActivityService {
       },
     });
 
-    // Convert BigInt to string for JSON serialization and convert distance from km to miles
     return activities.map((activity) => ({
       ...activity,
       stravaId: activity.stravaId.toString(),
-      distance: activity.distance !== null ? activity.distance * 0.621371 : null, // Convert km to miles
+      distance: activity.distance !== null ? activity.distance * 0.621371 : null,
+      splitsStandard: activity.splitsStandard ?? null,
     }));
   }
 
@@ -132,7 +151,6 @@ export class ActivityService {
         },
       });
     } catch (error: any) {
-      // If activity doesn't exist, that's okay - we'll sync it from Strava
       if (error.code === 'P2025') {
         return;
       }

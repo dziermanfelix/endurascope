@@ -38,6 +38,7 @@ model Activity {
   type                  String?
   startDate             DateTime?
   startDateLocal        DateTime?
+  splitsStandard        Json?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
