@@ -27,7 +27,6 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
 
     try {
       await createTrainingBlock(formData);
-      // Reset form
       setFormData({
         raceName: '',
         identifier: '',

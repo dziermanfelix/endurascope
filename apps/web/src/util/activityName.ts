@@ -1,9 +1,9 @@
 import type { Activity } from '../types/activity';
 import { parseActivityDate } from './time';
 
-export const MORNING_RUN_NAME = 'Morning Run';
+const MORNING_RUN_NAME = 'Morning Run';
 
-export function isMorningRun(activity: Activity): boolean {
+function isMorningRun(activity: Activity): boolean {
   return activity.name?.trim().toLowerCase() === MORNING_RUN_NAME.toLowerCase();
 }
 
@@ -28,7 +28,7 @@ function getNameSuffix(activity: Activity, identifier: string): string {
   return parseNumberedBlockRunName(name, identifier)?.suffix ?? '';
 }
 
-export function isNumberedBlockRun(activity: Activity, identifier: string): boolean {
+function isNumberedBlockRun(activity: Activity, identifier: string): boolean {
   const name = activity.name?.trim();
   if (!name) return false;
   if (isMorningRun(activity)) return true;
@@ -43,7 +43,7 @@ function sortActivitiesByDate(activities: Activity[]): Activity[] {
   });
 }
 
-export function getBlockRunActivities(activities: Activity[], identifier: string): Activity[] {
+function getBlockRunActivities(activities: Activity[], identifier: string): Activity[] {
   return sortActivitiesByDate(activities.filter((activity) => isNumberedBlockRun(activity, identifier)));
 }
 

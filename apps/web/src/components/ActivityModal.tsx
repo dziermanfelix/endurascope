@@ -19,7 +19,6 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
 
   const { loadActivities } = useActivities();
 
-  // Handle Escape key to close modal when not editing
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !isEditing) {
@@ -268,21 +267,13 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
                       const rowPace = formatPace(split.average_speed);
                       const isFastest = index === fastestSplitIndex && splits.length > 1;
                       const isSlowest = index === slowestSplitIndex && splits.length > 1;
-                      const rowClass = isFastest
-                        ? 'bg-green-50'
-                        : isSlowest
-                          ? 'bg-amber-50'
-                          : 'bg-white';
+                      const rowClass = isFastest ? 'bg-green-50' : isSlowest ? 'bg-amber-50' : 'bg-white';
 
                       return (
                         <tr key={split.split} className={`border-t border-gray-100 ${rowClass}`}>
-                          <td className='px-3 py-2 font-medium text-gray-900'>
-                            {formatSplitMileLabel(split)}
-                          </td>
+                          <td className='px-3 py-2 font-medium text-gray-900'>{formatSplitMileLabel(split)}</td>
                           <td className='px-3 py-2 text-gray-900'>{rowPace ?? '—'}</td>
-                          <td className='px-3 py-2 text-gray-900'>
-                            {formatTimeFromSeconds(split.moving_time)}
-                          </td>
+                          <td className='px-3 py-2 text-gray-900'>{formatTimeFromSeconds(split.moving_time)}</td>
                           <td className='px-3 py-2 text-gray-600'>
                             {formatSplitElevation(split.elevation_difference)}
                           </td>

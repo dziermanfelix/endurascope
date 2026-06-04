@@ -24,7 +24,6 @@ export class TrainingBlocksController {
         throw new HttpException('Start date is required', HttpStatus.BAD_REQUEST);
       }
 
-      // Validate dates
       const raceDate = new Date(createTrainingBlockDto.raceDate);
       const startDate = new Date(createTrainingBlockDto.startDate);
 
@@ -35,7 +34,6 @@ export class TrainingBlocksController {
         throw new HttpException('Invalid start date', HttpStatus.BAD_REQUEST);
       }
 
-      // Validate that start date is before race date
       if (startDate >= raceDate) {
         throw new HttpException('Start date must be before race date', HttpStatus.BAD_REQUEST);
       }
@@ -82,7 +80,6 @@ export class TrainingBlocksController {
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateTrainingBlockDto: UpdateTrainingBlockDto) {
     try {
-      // Validate dates if provided
       if (updateTrainingBlockDto.raceDate) {
         const raceDate = new Date(updateTrainingBlockDto.raceDate);
         if (isNaN(raceDate.getTime())) {
@@ -96,7 +93,6 @@ export class TrainingBlocksController {
         }
       }
 
-      // If both dates are being updated, validate they're in the correct order
       if (updateTrainingBlockDto.startDate && updateTrainingBlockDto.raceDate) {
         const startDate = new Date(updateTrainingBlockDto.startDate);
         const raceDate = new Date(updateTrainingBlockDto.raceDate);
@@ -105,7 +101,6 @@ export class TrainingBlocksController {
         }
       }
 
-      // If only one date is being updated, fetch the existing record to validate
       if (updateTrainingBlockDto.startDate || updateTrainingBlockDto.raceDate) {
         const existing = await this.trainingBlocksService.findOne(id);
         if (!existing) {

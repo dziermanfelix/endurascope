@@ -8,7 +8,7 @@ export class ActivitiesController {
 
   constructor(
     private activityService: ActivityService,
-    private stravaService: StravaService
+    private stravaService: StravaService,
   ) {}
 
   @Get()
@@ -70,12 +70,10 @@ export class ActivitiesController {
   @Put(':stravaId')
   async updateActivity(@Param('stravaId') stravaId: string, @Body() updates: { name?: string }) {
     try {
-      // Validate input
       if (!updates.name || updates.name.trim().length === 0) {
         throw new HttpException('Activity name cannot be empty', HttpStatus.BAD_REQUEST);
       }
 
-      // Validate Strava ID
       const stravaIdNumber = parseInt(stravaId, 10);
       if (isNaN(stravaIdNumber)) {
         throw new HttpException('Invalid Strava ID', HttpStatus.BAD_REQUEST);
@@ -83,7 +81,6 @@ export class ActivitiesController {
 
       this.logger.log(`Updating activity ${stravaId} with name: ${updates.name}`);
 
-      // Update on Strava first
       let updatedStravaActivity;
       try {
         updatedStravaActivity = await this.stravaService.updateActivity(stravaIdNumber, updates);
@@ -92,20 +89,16 @@ export class ActivitiesController {
         this.logger.error(`Failed to update activity on Strava: ${error.message}`, error.stack);
         throw new HttpException(
           `Failed to update activity on Strava: ${error.message}`,
-          HttpStatus.INTERNAL_SERVER_ERROR
+          HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
 
-      // Then update local database
       try {
         await this.activityService.updateActivity(stravaId, updates);
         this.logger.log(`Successfully updated activity ${stravaId} in local database`);
       } catch (error) {
         this.logger.error(`Failed to update activity in local database: ${error.message}`, error.stack);
-        // If local update fails but Strava update succeeded, we should still try to sync
-        // But log the error
         try {
-          // Try to sync the updated activity from Strava
           if (updatedStravaActivity) {
             await this.activityService.saveActivities([updatedStravaActivity]);
           }
@@ -114,7 +107,7 @@ export class ActivitiesController {
         }
         throw new HttpException(
           `Failed to update activity in local database: ${error.message}`,
-          HttpStatus.INTERNAL_SERVER_ERROR
+          HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
 

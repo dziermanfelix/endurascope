@@ -6,9 +6,6 @@ async function truncateDatabase() {
   try {
     console.log('Truncating database...');
 
-    // Delete all records from each table
-    // Using deleteMany instead of TRUNCATE to avoid foreign key issues
-    // and to work better with Prisma
     const [activitiesDeleted, tokensDeleted] = await Promise.all([
       prisma.activity.deleteMany(),
       prisma.stravaToken.deleteMany(),
