@@ -24,7 +24,6 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "db:refresh": "ts-node -r tsconfig-paths/register apps/api/scripts/truncate-db.ts",
     "fetch:activities": "ts-node -r tsconfig-paths/register apps/api/scripts/fetch-activities.ts",
     "web:dev": "npm run dev --workspace=apps/web",
     "web:build": "npm run build --workspace=apps/web",
