@@ -1,10 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type {
-  PlanWorkoutRow,
-  PlanWeekSummary,
-  TrainingBlockPlan,
-  UpdatePlannedWorkoutDto,
-} from '../api/plan';
+import type { PlanWorkoutRow, PlanWeekSummary, TrainingBlockPlan, UpdatePlannedWorkoutDto } from '../api/plan';
 import { bulkUpdatePlan, updatePlannedWorkout, updateTrainingWeek } from '../api/plan';
 import { formatWorkoutTypeLabel, PLANNED_WORKOUT_TYPES, type PlannedWorkoutType } from '../util/planWorkoutType';
 import { buildSuggestedActivityNames } from '../util/planActivityName';
@@ -16,6 +11,7 @@ import {
   formatTimeFromSeconds,
   paceFromAverageSpeed,
 } from '../util/planFormat';
+import { blurOnEnter } from '../util/form';
 
 interface BlockPlanGridProps {
   plan: TrainingBlockPlan;
@@ -66,6 +62,7 @@ function PlanRow({
           step='0.01'
           min='0'
           defaultValue={row.plannedMiles ?? ''}
+          onKeyDown={blurOnEnter}
           onBlur={(e) => {
             const v = e.target.value === '' ? null : parseFloat(e.target.value);
             if (v !== row.plannedMiles) saveField({ plannedMiles: v });
@@ -76,6 +73,7 @@ function PlanRow({
       <td className='px-1 py-1'>
         <select
           defaultValue={row.workoutType ?? ''}
+          onKeyDown={blurOnEnter}
           onChange={(e) => {
             const v = (e.target.value || null) as PlannedWorkoutType | null;
             if (v !== row.workoutType) saveField({ workoutType: v });
@@ -94,6 +92,7 @@ function PlanRow({
         <input
           type='text'
           defaultValue={row.expectedActivityName ?? ''}
+          onKeyDown={blurOnEnter}
           onBlur={(e) => {
             const v = e.target.value.trim() || null;
             if (v !== (row.expectedActivityName ?? null)) saveField({ expectedActivityName: v });
@@ -117,7 +116,11 @@ function PlanRow({
       <td className='px-2 py-1 text-xs text-right'>{formatElevationFeet(actual?.totalElevationGain ?? null)}</td>
       <td
         className={`px-2 py-1 text-xs text-right font-medium ${
-          row.diffMiles !== null && row.diffMiles < 0 ? 'text-red-600' : row.diffMiles !== null && row.diffMiles > 0 ? 'text-green-600' : ''
+          row.diffMiles !== null && row.diffMiles < 0
+            ? 'text-red-600'
+            : row.diffMiles !== null && row.diffMiles > 0
+              ? 'text-green-600'
+              : ''
         }`}
       >
         {formatDiff(row.diffMiles)}
@@ -176,6 +179,7 @@ function WeekSectionHeader({
           type='text'
           defaultValue={story ?? ''}
           disabled={saving}
+          onKeyDown={blurOnEnter}
           onBlur={async (e) => {
             const v = e.target.value.trim() || null;
             if (v === (story ?? null)) return;
@@ -188,7 +192,7 @@ function WeekSectionHeader({
             }
           }}
           className='flex-1 text-sm border border-gray-200 rounded px-2 py-1'
-          placeholder='e.g. deload, taper, travel week'
+          placeholder=''
         />
       </label>
     </div>
