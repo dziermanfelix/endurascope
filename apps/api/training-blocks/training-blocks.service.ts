@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTrainingBlockDto, UpdateTrainingBlockDto } from './dto/training-block.dto';
+import { TrainingBlockPlanService } from './training-block-plan.service';
 
 @Injectable()
 export class TrainingBlocksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private planService: TrainingBlockPlanService,
+  ) {}
 
   async create(createTrainingBlockDto: CreateTrainingBlockDto) {
     const raceDate =
@@ -27,9 +31,13 @@ export class TrainingBlocksService {
       durationWeeks,
     };
 
-    return this.prisma.trainingBlock.create({
+    const block = await this.prisma.trainingBlock.create({
       data,
     });
+
+    await this.planService.generatePlan(block.id);
+
+    return block;
   }
 
   async findAll() {

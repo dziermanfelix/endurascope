@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Activities } from './pages/Activities';
+import { BlockPlan } from './pages/BlockPlan';
 import { Weekly } from './pages/Weekly';
 import { TrainingBlocks } from './pages/TrainingBlocks';
 import { Admin } from './pages/Admin';
@@ -15,6 +16,16 @@ function Navigation() {
     <nav className='bg-white border-b border-gray-200'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='flex space-x-8'>
+          <Link
+            to='/plan'
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              location.pathname === '/plan' || location.pathname === '/'
+                ? 'border-orange-600 text-orange-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Plan
+          </Link>
           <Link
             to='/weekly'
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -84,7 +95,8 @@ function App() {
               <TrainingBlocksProvider>
                 <SelectedTrainingBlockProvider>
                   <Routes>
-                    <Route path='/' element={<Weekly />} />
+                    <Route path='/' element={<BlockPlan />} />
+                    <Route path='/plan' element={<BlockPlan />} />
                     <Route path='/weekly' element={<Weekly />} />
                     <Route path='/activities' element={<Activities />} />
                     <Route path='/training-blocks' element={<TrainingBlocks />} />

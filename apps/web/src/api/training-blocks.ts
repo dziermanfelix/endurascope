@@ -5,6 +5,8 @@ export interface TrainingBlock {
   raceDate: Date;
   startDate: Date;
   durationWeeks: number;
+  goalTime?: string | null;
+  goalDescription?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,6 +16,8 @@ export interface CreateTrainingBlockDto {
   identifier: string;
   raceDate: Date;
   startDate: Date;
+  goalTime?: string;
+  goalDescription?: string;
 }
 
 export interface UpdateTrainingBlockDto {
@@ -21,6 +25,8 @@ export interface UpdateTrainingBlockDto {
   identifier?: string;
   raceDate?: Date;
   startDate?: Date;
+  goalTime?: string | null;
+  goalDescription?: string | null;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';

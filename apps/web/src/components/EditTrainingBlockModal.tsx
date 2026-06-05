@@ -16,6 +16,8 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
     identifier: '',
     raceDate: new Date(),
     startDate: new Date(),
+    goalTime: '',
+    goalDescription: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +29,8 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
         identifier: trainingBlock.identifier,
         raceDate: new Date(trainingBlock.raceDate),
         startDate: new Date(trainingBlock.startDate),
+        goalTime: trainingBlock.goalTime ?? '',
+        goalDescription: trainingBlock.goalDescription ?? '',
       });
     }
   }, [trainingBlock]);
@@ -39,7 +43,11 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
     setError(null);
 
     try {
-      await updateTrainingBlock(trainingBlock.id, formData);
+      await updateTrainingBlock(trainingBlock.id, {
+        ...formData,
+        goalTime: formData.goalTime?.trim() || null,
+        goalDescription: formData.goalDescription?.trim() || null,
+      });
       onSuccess?.();
       onClose();
     } catch (err) {
@@ -152,6 +160,34 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
                 onChange={(e) => handleChange('raceDate', e.target.value)}
                 className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
                 required
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label htmlFor='goalDescription' className='block text-sm font-medium text-gray-700 mb-1'>
+                Goal
+              </label>
+              <input
+                type='text'
+                id='goalDescription'
+                value={formData.goalDescription ?? ''}
+                onChange={(e) => handleChange('goalDescription', e.target.value)}
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label htmlFor='goalTime' className='block text-sm font-medium text-gray-700 mb-1'>
+                Goal time
+              </label>
+              <input
+                type='text'
+                id='goalTime'
+                value={formData.goalTime ?? ''}
+                onChange={(e) => handleChange('goalTime', e.target.value)}
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
                 disabled={loading}
               />
             </div>

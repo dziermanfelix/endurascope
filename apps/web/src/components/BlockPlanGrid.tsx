@@ -1,0 +1,254 @@
+import { useCallback, useMemo, useState } from 'react';
+import type { PlanWorkoutRow, PlanWeekSummary, TrainingBlockPlan, UpdatePlannedWorkoutDto } from '../api/plan';
+import { bulkUpdatePlan, updatePlannedWorkout } from '../api/plan';
+import { formatWorkoutTypeLabel, PLANNED_WORKOUT_TYPES, type PlannedWorkoutType } from '../util/planWorkoutType';
+import { buildSuggestedActivityNames } from '../util/planActivityName';
+import {
+  averageHeartRateFromSummary,
+  averagePaceFromSummary,
+  formatElevationFeet,
+  formatPlanDate,
+  formatTimeFromSeconds,
+  paceFromAverageSpeed,
+} from '../util/planFormat';
+
+interface BlockPlanGridProps {
+  plan: TrainingBlockPlan;
+  onPlanUpdated: (plan: TrainingBlockPlan) => void;
+}
+
+function formatDiff(diff: number | null): string {
+  if (diff === null) return '';
+  if (diff === 0) return '0.00';
+  return diff > 0 ? diff.toFixed(2) : diff.toFixed(2);
+}
+
+function PlanRow({
+  row,
+  blockId,
+  suggestedName,
+  onPlanUpdated,
+}: {
+  row: PlanWorkoutRow;
+  blockId: string;
+  suggestedName: string;
+  onPlanUpdated: (plan: TrainingBlockPlan) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+
+  const saveField = useCallback(
+    async (data: UpdatePlannedWorkoutDto) => {
+      setSaving(true);
+      try {
+        const updated = await updatePlannedWorkout(blockId, row.id, data);
+        onPlanUpdated(updated);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [blockId, row.id, onPlanUpdated],
+  );
+
+  const actual = row.actual;
+
+  return (
+    <tr className={`border-b border-gray-100 ${saving ? 'opacity-60' : ''}`}>
+      <td className='px-2 py-1 text-xs text-gray-500 whitespace-nowrap'>{formatPlanDate(row.scheduledDate)}</td>
+      <td className='px-2 py-1 text-xs font-medium text-gray-700'>{row.dayCode}</td>
+      <td className='px-1 py-1'>
+        <input
+          type='text'
+          defaultValue={row.story ?? ''}
+          onBlur={(e) => {
+            const v = e.target.value.trim() || null;
+            if (v !== (row.story ?? null)) saveField({ story: v });
+          }}
+          className='w-full min-w-[80px] text-xs border border-gray-200 rounded px-1 py-0.5'
+          placeholder='—'
+        />
+      </td>
+      <td className='px-1 py-1'>
+        <input
+          type='number'
+          step='0.01'
+          min='0'
+          defaultValue={row.plannedMiles ?? ''}
+          onBlur={(e) => {
+            const v = e.target.value === '' ? null : parseFloat(e.target.value);
+            if (v !== row.plannedMiles) saveField({ plannedMiles: v });
+          }}
+          className='w-14 text-xs border border-gray-200 rounded px-1 py-0.5 text-right'
+        />
+      </td>
+      <td className='px-1 py-1'>
+        <select
+          defaultValue={row.workoutType ?? ''}
+          onChange={(e) => {
+            const v = (e.target.value || null) as PlannedWorkoutType | null;
+            if (v !== row.workoutType) saveField({ workoutType: v });
+          }}
+          className='w-full min-w-[88px] text-xs border border-gray-200 rounded px-1 py-0.5 bg-white'
+        >
+          <option value=''>—</option>
+          {PLANNED_WORKOUT_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {formatWorkoutTypeLabel(type)}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td className='px-1 py-1'>
+        <input
+          type='text'
+          defaultValue={row.expectedActivityName ?? ''}
+          onBlur={(e) => {
+            const v = e.target.value.trim() || null;
+            if (v !== (row.expectedActivityName ?? null)) saveField({ expectedActivityName: v });
+          }}
+          placeholder={suggestedName}
+          className='w-full min-w-[90px] text-xs border border-gray-200 rounded px-1 py-0.5 font-mono'
+        />
+      </td>
+      <td className='px-2 py-1 text-xs text-right border-l border-gray-200'>
+        {actual?.miles != null ? actual.miles.toFixed(2) : ''}
+      </td>
+      <td className='px-2 py-1 text-xs text-right'>{actual ? paceFromAverageSpeed(actual.averageSpeed) : ''}</td>
+      <td className='px-2 py-1 text-xs text-right'>
+        {actual?.movingTime ? formatTimeFromSeconds(actual.movingTime) : ''}
+      </td>
+      <td className='px-2 py-1 text-xs text-right'>
+        {actual?.elapsedTime ? formatTimeFromSeconds(actual.elapsedTime) : ''}
+      </td>
+      <td className='px-2 py-1 text-xs text-right'>{actual?.averageHeartRate ?? ''}</td>
+      <td className='px-2 py-1 text-xs text-right'>{actual?.calories ?? ''}</td>
+      <td className='px-2 py-1 text-xs text-right'>{formatElevationFeet(actual?.totalElevationGain ?? null)}</td>
+      <td
+        className={`px-2 py-1 text-xs text-right font-medium ${
+          row.diffMiles !== null && row.diffMiles < 0 ? 'text-red-600' : row.diffMiles !== null && row.diffMiles > 0 ? 'text-green-600' : ''
+        }`}
+      >
+        {formatDiff(row.diffMiles)}
+      </td>
+    </tr>
+  );
+}
+
+function WeekSummaryRow({ summary }: { summary: PlanWeekSummary }) {
+  return (
+    <tr className='bg-gray-50 font-medium border-t-2 border-gray-300'>
+      <td colSpan={3} className='px-2 py-2 text-xs text-gray-600'>
+        Week {summary.weekNumber} total
+      </td>
+      <td className='px-2 py-2 text-xs text-right'>{summary.plannedMiles.toFixed(2)}</td>
+      <td colSpan={2} className='px-2 py-2 text-xs text-gray-500'>
+        {summary.plannedRuns} planned runs
+      </td>
+      <td className='px-2 py-2 text-xs text-right border-l border-gray-200'>{summary.actualMiles.toFixed(2)}</td>
+      <td className='px-2 py-2 text-xs text-right'>{averagePaceFromSummary(summary)}</td>
+      <td className='px-2 py-2 text-xs text-right'>{formatTimeFromSeconds(summary.totalMovingTime)}</td>
+      <td className='px-2 py-2 text-xs text-right'>{formatTimeFromSeconds(summary.totalElapsedTime)}</td>
+      <td className='px-2 py-2 text-xs text-right'>{averageHeartRateFromSummary(summary)}</td>
+      <td className='px-2 py-2 text-xs text-right'>{summary.totalCalories || ''}</td>
+      <td />
+      <td
+        className={`px-2 py-2 text-xs text-right ${
+          summary.diffMiles < 0 ? 'text-red-600' : summary.diffMiles > 0 ? 'text-green-600' : ''
+        }`}
+      >
+        {formatDiff(summary.diffMiles)}
+      </td>
+    </tr>
+  );
+}
+
+const TABLE_HEADERS = (
+  <thead>
+    <tr className='bg-gray-100 text-xs text-gray-600 uppercase tracking-wide'>
+      <th className='px-2 py-2 text-left'>Date</th>
+      <th className='px-2 py-2 text-left'>Day</th>
+      <th className='px-2 py-2 text-left'>Story</th>
+      <th className='px-2 py-2 text-right'>Miles*</th>
+      <th className='px-2 py-2 text-left'>Type</th>
+      <th className='px-2 py-2 text-left'>Activity</th>
+      <th className='px-2 py-2 text-right border-l border-gray-300'>Miles</th>
+      <th className='px-2 py-2 text-right'>Pace</th>
+      <th className='px-2 py-2 text-right'>Time</th>
+      <th className='px-2 py-2 text-right'>Etime</th>
+      <th className='px-2 py-2 text-right'>Avg HR</th>
+      <th className='px-2 py-2 text-right'>Cal</th>
+      <th className='px-2 py-2 text-right'>Asc</th>
+      <th className='px-2 py-2 text-right'>Diff</th>
+    </tr>
+  </thead>
+);
+
+export function BlockPlanGrid({ plan, onPlanUpdated }: BlockPlanGridProps) {
+  const suggestions = useMemo(
+    () => buildSuggestedActivityNames(plan.block.identifier, plan.weeks),
+    [plan.block.identifier, plan.weeks],
+  );
+
+  const [fillingNames, setFillingNames] = useState(false);
+
+  const fillSuggestedNames = async () => {
+    setFillingNames(true);
+    try {
+      const updates = plan.weeks.flatMap((w) =>
+        w.rows
+          .filter((r) => !r.expectedActivityName)
+          .map((r) => ({
+            id: r.id,
+            expectedActivityName: suggestions.get(r.id) ?? null,
+          })),
+      );
+      if (updates.length === 0) return;
+
+      const updated = await bulkUpdatePlan(plan.block.id, updates);
+      onPlanUpdated(updated);
+    } finally {
+      setFillingNames(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className='flex justify-end mb-4'>
+        <button
+          type='button'
+          onClick={fillSuggestedNames}
+          disabled={fillingNames}
+          className='text-sm px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50'
+        >
+          {fillingNames ? 'Filling…' : 'Fill suggested activity names'}
+        </button>
+      </div>
+
+      <div className='space-y-8'>
+        {plan.weeks.map((week) => (
+          <section key={week.weekNumber}>
+            <h3 className='text-lg font-semibold text-gray-900 mb-2 sticky top-0 bg-gray-50 py-2 z-10'>
+              Week {week.weekNumber}
+            </h3>
+            <div className='overflow-x-auto border border-gray-200 rounded-lg bg-white'>
+              <table className='w-full min-w-[1100px] border-collapse'>
+                {TABLE_HEADERS}
+                <tbody>
+                  {week.rows.map((row) => (
+                    <PlanRow
+                      key={row.id}
+                      row={row}
+                      blockId={plan.block.id}
+                      suggestedName={suggestions.get(row.id) ?? `${plan.block.identifier}???`}
+                      onPlanUpdated={onPlanUpdated}
+                    />
+                  ))}
+                  <WeekSummaryRow summary={week.summary} />
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}

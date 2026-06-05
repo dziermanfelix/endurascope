@@ -14,6 +14,8 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
     identifier: '',
     raceDate: new Date(),
     startDate: new Date(),
+    goalTime: '',
+    goalDescription: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,12 +28,18 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
     setError(null);
 
     try {
-      await createTrainingBlock(formData);
+      await createTrainingBlock({
+        ...formData,
+        goalTime: formData.goalTime?.trim() || undefined,
+        goalDescription: formData.goalDescription?.trim() || undefined,
+      });
       setFormData({
         raceName: '',
         identifier: '',
         raceDate: new Date(),
         startDate: new Date(),
+        goalTime: '',
+        goalDescription: '',
       });
       onSuccess?.();
       onClose();
@@ -127,6 +135,37 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
                 onChange={(e) => handleChange('startDate', e.target.value)}
                 className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
                 required
+                disabled={loading}
+              />
+            </div>
+
+            {/* Goal */}
+            <div>
+              <label htmlFor='goalDescription' className='block text-sm font-medium text-gray-700 mb-1'>
+                Goal
+              </label>
+              <input
+                type='text'
+                id='goalDescription'
+                value={formData.goalDescription ?? ''}
+                onChange={(e) => handleChange('goalDescription', e.target.value)}
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
+                placeholder='e.g. Boston or bust marathon'
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label htmlFor='goalTime' className='block text-sm font-medium text-gray-700 mb-1'>
+                Goal time
+              </label>
+              <input
+                type='text'
+                id='goalTime'
+                value={formData.goalTime ?? ''}
+                onChange={(e) => handleChange('goalTime', e.target.value)}
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
+                placeholder='e.g. 3:00'
                 disabled={loading}
               />
             </div>

@@ -1,12 +1,29 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
 import { TrainingBlocksService } from './training-blocks.service';
+import { TrainingBlockPlanService } from './training-block-plan.service';
 import { CreateTrainingBlockDto, UpdateTrainingBlockDto } from './dto/training-block.dto';
+import { BulkUpdatePlanDto, UpdatePlannedWorkoutDto } from './dto/plan.dto';
 
 @Controller('api/training-blocks')
 export class TrainingBlocksController {
   private readonly logger = new Logger(TrainingBlocksController.name);
 
-  constructor(private readonly trainingBlocksService: TrainingBlocksService) {}
+  constructor(
+    private readonly trainingBlocksService: TrainingBlocksService,
+    private readonly planService: TrainingBlockPlanService,
+  ) {}
 
   @Post()
   async create(@Body() createTrainingBlockDto: CreateTrainingBlockDto) {
@@ -57,6 +74,85 @@ export class TrainingBlocksController {
     } catch (error) {
       this.logger.error(`Error fetching training blocks: ${error.message}`, error.stack);
       throw new HttpException(`Failed to fetch training blocks: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get(':id/plan')
+  async getPlan(@Param('id') id: string) {
+    try {
+      return await this.planService.getPlan(id);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      if (error.name === 'NotFoundException') {
+        throw new HttpException('Training block not found', HttpStatus.NOT_FOUND);
+      }
+      this.logger.error(`Error fetching plan: ${error.message}`, error.stack);
+      throw new HttpException(`Failed to fetch plan: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Post(':id/plan/generate')
+  async generatePlan(@Param('id') id: string) {
+    try {
+      const block = await this.trainingBlocksService.findOne(id);
+      if (!block) {
+        throw new HttpException('Training block not found', HttpStatus.NOT_FOUND);
+      }
+      return await this.planService.generatePlan(id);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      this.logger.error(`Error generating plan: ${error.message}`, error.stack);
+      throw new HttpException(`Failed to generate plan: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Patch(':id/plan/bulk')
+  async bulkUpdatePlan(@Param('id') id: string, @Body() body: BulkUpdatePlanDto) {
+    try {
+      if (!body.workouts || !Array.isArray(body.workouts)) {
+        throw new HttpException('workouts array is required', HttpStatus.BAD_REQUEST);
+      }
+      return await this.planService.bulkUpdatePlan(id, body.workouts);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      if (error instanceof BadRequestException) {
+        throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      }
+      if (error.name === 'NotFoundException') {
+        throw new HttpException('Training block not found', HttpStatus.NOT_FOUND);
+      }
+      this.logger.error(`Error bulk updating plan: ${error.message}`, error.stack);
+      throw new HttpException(`Failed to update plan: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Patch(':id/plan/:workoutId')
+  async updatePlannedWorkout(
+    @Param('id') id: string,
+    @Param('workoutId') workoutId: string,
+    @Body() body: UpdatePlannedWorkoutDto,
+  ) {
+    try {
+      await this.planService.updatePlannedWorkout(id, workoutId, body);
+      return await this.planService.getPlan(id);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      if (error instanceof BadRequestException) {
+        throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      }
+      if (error.name === 'NotFoundException') {
+        throw new HttpException('Planned workout not found', HttpStatus.NOT_FOUND);
+      }
+      this.logger.error(`Error updating planned workout: ${error.message}`, error.stack);
+      throw new HttpException(`Failed to update planned workout: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
