@@ -14,7 +14,7 @@ import {
 import { TrainingBlocksService } from './training-blocks.service';
 import { TrainingBlockPlanService } from './training-block-plan.service';
 import { CreateTrainingBlockDto, UpdateTrainingBlockDto } from './dto/training-block.dto';
-import { BulkUpdatePlanDto, UpdatePlannedWorkoutDto } from './dto/plan.dto';
+import { BulkUpdatePlanDto, UpdatePlannedWorkoutDto, UpdateTrainingWeekDto } from './dto/plan.dto';
 
 @Controller('api/training-blocks')
 export class TrainingBlocksController {
@@ -129,6 +129,31 @@ export class TrainingBlocksController {
       }
       this.logger.error(`Error bulk updating plan: ${error.message}`, error.stack);
       throw new HttpException(`Failed to update plan: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Patch(':id/plan/weeks/:weekNumber')
+  async updateTrainingWeek(
+    @Param('id') id: string,
+    @Param('weekNumber') weekNumber: string,
+    @Body() body: UpdateTrainingWeekDto,
+  ) {
+    try {
+      const week = parseInt(weekNumber, 10);
+      if (isNaN(week) || week < 1) {
+        throw new HttpException('Invalid week number', HttpStatus.BAD_REQUEST);
+      }
+      await this.planService.updateTrainingWeek(id, week, body);
+      return await this.planService.getPlan(id);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      if (error.name === 'NotFoundException') {
+        throw new HttpException('Training week not found', HttpStatus.NOT_FOUND);
+      }
+      this.logger.error(`Error updating training week: ${error.message}`, error.stack);
+      throw new HttpException(`Failed to update training week: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

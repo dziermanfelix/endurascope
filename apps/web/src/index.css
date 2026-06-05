@@ -3,3 +3,17 @@
 button {
   @apply cursor-pointer disabled:cursor-not-allowed;
 }
+
+/* Controlled by uiSettings.hideNumberInputSpinners — see config/ui.ts */
+@layer base {
+  :root[data-hide-number-spinners="true"] input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  :root[data-hide-number-spinners="true"] input[type="number"]::-webkit-outer-spin-button,
+  :root[data-hide-number-spinners="true"] input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}

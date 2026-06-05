@@ -28,7 +28,7 @@ export function WorkoutLegend() {
             </p>
           ))}
           <p className='text-xs text-gray-500 pt-1'>
-            Use Type for easy, workout, or long. Put detailed prescriptions (e.g. Nx1(3), 10E + 4 steady) in Story.
+            Use Type for easy, workout, or long. Put week notes and detailed prescriptions (e.g. Nx1(3), deload) in the week Story field.
             Interval result summaries are not parsed yet.
           </p>
         </div>

@@ -63,6 +63,7 @@ model TrainingBlock {
   updatedAt       DateTime @updatedAt
 
   plannedWorkouts PlannedWorkout[]
+  trainingWeeks   TrainingWeek[]
 
   @@map("training_blocks")
   @@index([raceDate])
@@ -75,13 +76,27 @@ enum PlannedWorkoutType {
   long
 }
 
+model TrainingWeek {
+  id              String   @id @default(uuid())
+  trainingBlockId String
+  weekNumber      Int
+  story           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  trainingBlock TrainingBlock @relation(fields: [trainingBlockId], references: [id], onDelete: Cascade)
+
+  @@unique([trainingBlockId, weekNumber])
+  @@index([trainingBlockId])
+  @@map("training_weeks")
+}
+
 model PlannedWorkout {
   id                   String              @id @default(uuid())
   trainingBlockId      String
   weekNumber           Int
   dayCode              String
   scheduledDate        DateTime
-  story                String?
   plannedMiles         Float?
   workoutType          PlannedWorkoutType?
   expectedActivityName String?

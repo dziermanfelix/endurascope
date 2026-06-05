@@ -22,7 +22,6 @@ export interface PlanWorkoutRow {
   dayCode: string;
   sortOrder: number;
   scheduledDate: string;
-  story: string | null;
   plannedMiles: number | null;
   workoutType: PlannedWorkoutType | null;
   expectedActivityName: string | null;
@@ -56,15 +55,20 @@ export interface TrainingBlockPlan {
     goalDescription: string | null;
   };
   weeks: {
+    id: string;
     weekNumber: number;
+    story: string | null;
     rows: PlanWorkoutRow[];
     summary: PlanWeekSummary;
   }[];
 }
 
+export interface UpdateTrainingWeekDto {
+  story?: string | null;
+}
+
 export interface UpdatePlannedWorkoutDto {
   scheduledDate?: string;
-  story?: string | null;
   plannedMiles?: number | null;
   workoutType?: PlannedWorkoutType | null;
   expectedActivityName?: string | null;
@@ -88,6 +92,23 @@ export async function generateTrainingBlockPlan(
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.message || 'Failed to generate training plan');
+  }
+  return response.json();
+}
+
+export async function updateTrainingWeek(
+  blockId: string,
+  weekNumber: number,
+  data: UpdateTrainingWeekDto,
+): Promise<TrainingBlockPlan> {
+  const response = await fetch(`${API_BASE_URL}/api/training-blocks/${blockId}/plan/weeks/${weekNumber}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to update training week');
   }
   return response.json();
 }

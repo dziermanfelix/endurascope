@@ -1,6 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { PlanWorkoutRow, PlanWeekSummary, TrainingBlockPlan, UpdatePlannedWorkoutDto } from '../api/plan';
-import { bulkUpdatePlan, updatePlannedWorkout } from '../api/plan';
+import type {
+  PlanWorkoutRow,
+  PlanWeekSummary,
+  TrainingBlockPlan,
+  UpdatePlannedWorkoutDto,
+} from '../api/plan';
+import { bulkUpdatePlan, updatePlannedWorkout, updateTrainingWeek } from '../api/plan';
 import { formatWorkoutTypeLabel, PLANNED_WORKOUT_TYPES, type PlannedWorkoutType } from '../util/planWorkoutType';
 import { buildSuggestedActivityNames } from '../util/planActivityName';
 import {
@@ -55,18 +60,6 @@ function PlanRow({
     <tr className={`border-b border-gray-100 ${saving ? 'opacity-60' : ''}`}>
       <td className='px-2 py-1 text-xs text-gray-500 whitespace-nowrap'>{formatPlanDate(row.scheduledDate)}</td>
       <td className='px-2 py-1 text-xs font-medium text-gray-700'>{row.dayCode}</td>
-      <td className='px-1 py-1'>
-        <input
-          type='text'
-          defaultValue={row.story ?? ''}
-          onBlur={(e) => {
-            const v = e.target.value.trim() || null;
-            if (v !== (row.story ?? null)) saveField({ story: v });
-          }}
-          className='w-full min-w-[80px] text-xs border border-gray-200 rounded px-1 py-0.5'
-          placeholder='—'
-        />
-      </td>
       <td className='px-1 py-1'>
         <input
           type='number'
@@ -136,7 +129,7 @@ function PlanRow({
 function WeekSummaryRow({ summary }: { summary: PlanWeekSummary }) {
   return (
     <tr className='bg-gray-50 font-medium border-t-2 border-gray-300'>
-      <td colSpan={3} className='px-2 py-2 text-xs text-gray-600'>
+      <td colSpan={2} className='px-2 py-2 text-xs text-gray-600'>
         Week {summary.weekNumber} total
       </td>
       <td className='px-2 py-2 text-xs text-right'>{summary.plannedMiles.toFixed(2)}</td>
@@ -161,12 +154,52 @@ function WeekSummaryRow({ summary }: { summary: PlanWeekSummary }) {
   );
 }
 
+function WeekSectionHeader({
+  weekNumber,
+  story,
+  blockId,
+  onPlanUpdated,
+}: {
+  weekNumber: number;
+  story: string | null;
+  blockId: string;
+  onPlanUpdated: (plan: TrainingBlockPlan) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+
+  return (
+    <div className='flex flex-wrap items-center gap-3 mb-2 sticky top-0 bg-gray-50 py-2 z-10'>
+      <h3 className='text-lg font-semibold text-gray-900'>Week {weekNumber}</h3>
+      <label className='flex items-center gap-2 flex-1 min-w-[200px]'>
+        <span className='text-xs font-medium text-gray-500 shrink-0'>Story</span>
+        <input
+          type='text'
+          defaultValue={story ?? ''}
+          disabled={saving}
+          onBlur={async (e) => {
+            const v = e.target.value.trim() || null;
+            if (v === (story ?? null)) return;
+            setSaving(true);
+            try {
+              const updated = await updateTrainingWeek(blockId, weekNumber, { story: v });
+              onPlanUpdated(updated);
+            } finally {
+              setSaving(false);
+            }
+          }}
+          className='flex-1 text-sm border border-gray-200 rounded px-2 py-1'
+          placeholder='e.g. deload, taper, travel week'
+        />
+      </label>
+    </div>
+  );
+}
+
 const TABLE_HEADERS = (
   <thead>
     <tr className='bg-gray-100 text-xs text-gray-600 uppercase tracking-wide'>
       <th className='px-2 py-2 text-left'>Date</th>
       <th className='px-2 py-2 text-left'>Day</th>
-      <th className='px-2 py-2 text-left'>Story</th>
       <th className='px-2 py-2 text-right'>Miles*</th>
       <th className='px-2 py-2 text-left'>Type</th>
       <th className='px-2 py-2 text-left'>Activity</th>
@@ -226,9 +259,12 @@ export function BlockPlanGrid({ plan, onPlanUpdated }: BlockPlanGridProps) {
       <div className='space-y-8'>
         {plan.weeks.map((week) => (
           <section key={week.weekNumber}>
-            <h3 className='text-lg font-semibold text-gray-900 mb-2 sticky top-0 bg-gray-50 py-2 z-10'>
-              Week {week.weekNumber}
-            </h3>
+            <WeekSectionHeader
+              weekNumber={week.weekNumber}
+              story={week.story}
+              blockId={plan.block.id}
+              onPlanUpdated={onPlanUpdated}
+            />
             <div className='overflow-x-auto border border-gray-200 rounded-lg bg-white'>
               <table className='w-full min-w-[1100px] border-collapse'>
                 {TABLE_HEADERS}

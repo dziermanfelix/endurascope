@@ -1,7 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PlannedWorkoutType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { BulkUpdatePlannedWorkoutItemDto, UpdatePlannedWorkoutDto } from './dto/plan.dto';
+import {
+  BulkUpdatePlannedWorkoutItemDto,
+  UpdatePlannedWorkoutDto,
+  UpdateTrainingWeekDto,
+} from './dto/plan.dto';
 
 const PLANNED_WORKOUT_TYPES: PlannedWorkoutType[] = ['easy', 'workout', 'long'];
 
@@ -38,7 +42,6 @@ export interface PlanWorkoutRow {
   dayCode: string;
   sortOrder: number;
   scheduledDate: string;
-  story: string | null;
   plannedMiles: number | null;
   workoutType: PlannedWorkoutType | null;
   expectedActivityName: string | null;
@@ -72,7 +75,9 @@ export interface TrainingBlockPlanResponse {
     goalDescription: string | null;
   };
   weeks: {
+    id: string;
     weekNumber: number;
+    story: string | null;
     rows: PlanWorkoutRow[];
     summary: PlanWeekSummary;
   }[];
@@ -144,6 +149,25 @@ export class TrainingBlockPlanService {
     return Math.round((actual - plannedMiles) * 100) / 100;
   }
 
+  private async ensureTrainingWeeks(trainingBlockId: string, durationWeeks: number): Promise<void> {
+    const existing = await this.prisma.trainingWeek.findMany({
+      where: { trainingBlockId },
+      select: { weekNumber: true },
+    });
+    const existingWeeks = new Set(existing.map((w) => w.weekNumber));
+    const toCreate: { trainingBlockId: string; weekNumber: number }[] = [];
+
+    for (let weekNumber = 1; weekNumber <= durationWeeks; weekNumber++) {
+      if (!existingWeeks.has(weekNumber)) {
+        toCreate.push({ trainingBlockId, weekNumber });
+      }
+    }
+
+    if (toCreate.length > 0) {
+      await this.prisma.trainingWeek.createMany({ data: toCreate });
+    }
+  }
+
   async generatePlan(trainingBlockId: string): Promise<{ created: number; existing: number }> {
     const block = await this.prisma.trainingBlock.findUnique({ where: { id: trainingBlockId } });
     if (!block) {
@@ -189,6 +213,7 @@ export class TrainingBlockPlanService {
     }
 
     await this.prisma.plannedWorkout.createMany({ data: rows });
+    await this.ensureTrainingWeeks(trainingBlockId, block.durationWeeks);
 
     return { created: rows.length, existing: 0 };
   }
@@ -198,6 +223,14 @@ export class TrainingBlockPlanService {
     if (!block) {
       throw new NotFoundException('Training block not found');
     }
+
+    await this.ensureTrainingWeeks(trainingBlockId, block.durationWeeks);
+
+    const trainingWeeks = await this.prisma.trainingWeek.findMany({
+      where: { trainingBlockId },
+      orderBy: { weekNumber: 'asc' },
+    });
+    const storyByWeek = new Map(trainingWeeks.map((w) => [w.weekNumber, w]));
 
     const plannedWorkouts = await this.prisma.plannedWorkout.findMany({
       where: { trainingBlockId },
@@ -243,7 +276,6 @@ export class TrainingBlockPlanService {
         dayCode: workout.dayCode,
         sortOrder: workout.sortOrder,
         scheduledDate: workout.scheduledDate.toISOString(),
-        story: workout.story,
         plannedMiles: workout.plannedMiles,
         workoutType: workout.workoutType,
         expectedActivityName: workout.expectedActivityName,
@@ -259,11 +291,29 @@ export class TrainingBlockPlanService {
 
     const weeks = Array.from(weekMap.entries())
       .sort(([a], [b]) => a - b)
-      .map(([weekNumber, rows]) => ({
-        weekNumber,
-        rows,
-        summary: this.computeWeekSummary(weekNumber, rows),
-      }));
+      .map(([weekNumber, rows]) => {
+        const trainingWeek = storyByWeek.get(weekNumber);
+        return {
+          id: trainingWeek?.id ?? '',
+          weekNumber,
+          story: trainingWeek?.story ?? null,
+          rows,
+          summary: this.computeWeekSummary(weekNumber, rows),
+        };
+      });
+
+    for (const trainingWeek of trainingWeeks) {
+      if (!weekMap.has(trainingWeek.weekNumber)) {
+        weeks.push({
+          id: trainingWeek.id,
+          weekNumber: trainingWeek.weekNumber,
+          story: trainingWeek.story,
+          rows: [],
+          summary: this.computeWeekSummary(trainingWeek.weekNumber, []),
+        });
+      }
+    }
+    weeks.sort((a, b) => a.weekNumber - b.weekNumber);
 
     return {
       block: {
@@ -348,7 +398,6 @@ export class TrainingBlockPlanService {
       data.scheduledDate =
         dto.scheduledDate instanceof Date ? dto.scheduledDate : new Date(dto.scheduledDate);
     }
-    if (dto.story !== undefined) data.story = dto.story;
     if (dto.plannedMiles !== undefined) data.plannedMiles = dto.plannedMiles;
     if (dto.workoutType !== undefined) data.workoutType = this.resolveWorkoutType(dto.workoutType);
     if (dto.expectedActivityName !== undefined) data.expectedActivityName = dto.expectedActivityName;
@@ -375,7 +424,6 @@ export class TrainingBlockPlanService {
               ? item.scheduledDate
               : new Date(item.scheduledDate);
         }
-        if (item.story !== undefined) data.story = item.story;
         if (item.plannedMiles !== undefined) data.plannedMiles = item.plannedMiles;
         if (item.workoutType !== undefined) {
           data.workoutType = this.resolveWorkoutType(item.workoutType);
@@ -394,4 +442,36 @@ export class TrainingBlockPlanService {
     return this.getPlan(trainingBlockId);
   }
 
+  async updateTrainingWeek(
+    trainingBlockId: string,
+    weekNumber: number,
+    dto: UpdateTrainingWeekDto,
+  ) {
+    await this.ensureTrainingWeeks(
+      trainingBlockId,
+      (
+        await this.prisma.trainingBlock.findUnique({
+          where: { id: trainingBlockId },
+          select: { durationWeeks: true },
+        })
+      )?.durationWeeks ?? weekNumber,
+    );
+
+    const trainingWeek = await this.prisma.trainingWeek.findUnique({
+      where: {
+        trainingBlockId_weekNumber: { trainingBlockId, weekNumber },
+      },
+    });
+
+    if (!trainingWeek) {
+      throw new NotFoundException('Training week not found');
+    }
+
+    return this.prisma.trainingWeek.update({
+      where: { id: trainingWeek.id },
+      data: {
+        ...(dto.story !== undefined && { story: dto.story }),
+      },
+    });
+  }
 }
