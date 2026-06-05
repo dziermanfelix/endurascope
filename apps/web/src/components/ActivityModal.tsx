@@ -188,7 +188,7 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
             {activity.elapsedTime !== null ? (
               <div className='text-center'>
                 <p className='text-4xl font-bold text-gray-900'>{formatTimeFromSeconds(activity.elapsedTime)}</p>
-                <p className='text-sm text-gray-500 mt-1'>elapsed time</p>
+                <p className='text-sm text-gray-500 mt-1'>time</p>
               </div>
             ) : (
               <div className='text-center'>
@@ -205,14 +205,6 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
               <div className='bg-gray-50 rounded-lg p-4'>
                 <p className='text-xs text-gray-500 mb-1'>Activity Type</p>
                 <p className='text-xl font-semibold text-gray-900'>{activity.type}</p>
-              </div>
-            ) : null}
-
-            {/* Moving time */}
-            {activity.movingTime !== null ? (
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-xs text-gray-500 mb-1'>Moving Time</p>
-                <p className='text-xl font-semibold text-gray-900'>{formatTimeFromSeconds(activity.movingTime)}</p>
               </div>
             ) : null}
 
@@ -273,7 +265,7 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
                         <tr key={split.split} className={`border-t border-gray-100 ${rowClass}`}>
                           <td className='px-3 py-2 font-medium text-gray-900'>{formatSplitMileLabel(split)}</td>
                           <td className='px-3 py-2 text-gray-900'>{rowPace ?? '—'}</td>
-                          <td className='px-3 py-2 text-gray-900'>{formatTimeFromSeconds(split.moving_time)}</td>
+                          <td className='px-3 py-2 text-gray-900'>{formatTimeFromSeconds(split.elapsed_time)}</td>
                           <td className='px-3 py-2 text-gray-600'>
                             {formatSplitElevation(split.elevation_difference)}
                           </td>

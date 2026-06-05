@@ -7,7 +7,6 @@ export interface PlanActivityActual {
   stravaId: string;
   name: string | null;
   miles: number | null;
-  movingTime: number | null;
   elapsedTime: number | null;
   averageHeartRate: number | null;
   calories: number | null;
@@ -35,7 +34,6 @@ export interface PlanWeekSummary {
   plannedRuns: number;
   plannedMiles: number;
   actualMiles: number;
-  totalMovingTime: number;
   totalElapsedTime: number;
   totalCalories: number;
   heartRateSum: number;
@@ -83,9 +81,7 @@ export async function fetchTrainingBlockPlan(blockId: string): Promise<TrainingB
   return response.json();
 }
 
-export async function generateTrainingBlockPlan(
-  blockId: string,
-): Promise<{ created: number; existing: number }> {
+export async function generateTrainingBlockPlan(blockId: string): Promise<{ created: number; existing: number }> {
   const response = await fetch(`${API_BASE_URL}/api/training-blocks/${blockId}/plan/generate`, {
     method: 'POST',
   });

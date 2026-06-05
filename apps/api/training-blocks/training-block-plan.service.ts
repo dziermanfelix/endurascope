@@ -1,11 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PlannedWorkoutType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  BulkUpdatePlannedWorkoutItemDto,
-  UpdatePlannedWorkoutDto,
-  UpdateTrainingWeekDto,
-} from './dto/plan.dto';
+import { BulkUpdatePlannedWorkoutItemDto, UpdatePlannedWorkoutDto, UpdateTrainingWeekDto } from './dto/plan.dto';
 
 const PLANNED_WORKOUT_TYPES: PlannedWorkoutType[] = ['easy', 'workout', 'long'];
 
@@ -27,7 +23,6 @@ export interface PlanActivityActual {
   stravaId: string;
   name: string | null;
   miles: number | null;
-  movingTime: number | null;
   elapsedTime: number | null;
   averageHeartRate: number | null;
   calories: number | null;
@@ -55,7 +50,6 @@ export interface PlanWeekSummary {
   plannedRuns: number;
   plannedMiles: number;
   actualMiles: number;
-  totalMovingTime: number;
   totalElapsedTime: number;
   totalCalories: number;
   heartRateSum: number;
@@ -93,9 +87,7 @@ export class TrainingBlockPlanService {
     if (value === undefined) return undefined;
     if (value === null) return null;
     if (!PLANNED_WORKOUT_TYPES.includes(value as PlannedWorkoutType)) {
-      throw new BadRequestException(
-        `workoutType must be one of: ${PLANNED_WORKOUT_TYPES.join(', ')}`,
-      );
+      throw new BadRequestException(`workoutType must be one of: ${PLANNED_WORKOUT_TYPES.join(', ')}`);
     }
     return value as PlannedWorkoutType;
   }
@@ -118,7 +110,6 @@ export class TrainingBlockPlanService {
     stravaId: bigint;
     name: string | null;
     distance: number | null;
-    movingTime: number | null;
     elapsedTime: number | null;
     averageHeartRate: number | null;
     calories: number | null;
@@ -131,7 +122,6 @@ export class TrainingBlockPlanService {
       stravaId: activity.stravaId.toString(),
       name: activity.name,
       miles: activity.distance !== null ? activity.distance * KM_TO_MILES : null,
-      movingTime: activity.movingTime,
       elapsedTime: activity.elapsedTime,
       averageHeartRate: activity.averageHeartRate,
       calories: activity.calories,
@@ -183,11 +173,7 @@ export class TrainingBlockPlanService {
     }
 
     const startDate = new Date(block.startDate);
-    const startLocal = new Date(
-      startDate.getUTCFullYear(),
-      startDate.getUTCMonth(),
-      startDate.getUTCDate(),
-    );
+    const startLocal = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate());
     const blockStartWeek = this.getWeekStart(startLocal);
 
     const rows: {
@@ -334,7 +320,6 @@ export class TrainingBlockPlanService {
     let plannedRuns = 0;
     let plannedMiles = 0;
     let actualMiles = 0;
-    let totalMovingTime = 0;
     let totalElapsedTime = 0;
     let totalCalories = 0;
     let heartRateSum = 0;
@@ -348,9 +333,6 @@ export class TrainingBlockPlanService {
       }
       if (row.actual?.miles) {
         actualMiles += row.actual.miles;
-      }
-      if (row.actual?.movingTime) {
-        totalMovingTime += row.actual.movingTime;
       }
       if (row.actual?.elapsedTime) {
         totalElapsedTime += row.actual.elapsedTime;
@@ -372,7 +354,6 @@ export class TrainingBlockPlanService {
       plannedRuns,
       plannedMiles: Math.round(plannedMiles * 100) / 100,
       actualMiles: Math.round(actualMiles * 100) / 100,
-      totalMovingTime,
       totalElapsedTime,
       totalCalories,
       heartRateSum,
@@ -381,11 +362,7 @@ export class TrainingBlockPlanService {
     };
   }
 
-  async updatePlannedWorkout(
-    trainingBlockId: string,
-    workoutId: string,
-    dto: UpdatePlannedWorkoutDto,
-  ) {
+  async updatePlannedWorkout(trainingBlockId: string, workoutId: string, dto: UpdatePlannedWorkoutDto) {
     const workout = await this.prisma.plannedWorkout.findFirst({
       where: { id: workoutId, trainingBlockId },
     });
@@ -395,8 +372,7 @@ export class TrainingBlockPlanService {
 
     const data: Record<string, unknown> = {};
     if (dto.scheduledDate !== undefined) {
-      data.scheduledDate =
-        dto.scheduledDate instanceof Date ? dto.scheduledDate : new Date(dto.scheduledDate);
+      data.scheduledDate = dto.scheduledDate instanceof Date ? dto.scheduledDate : new Date(dto.scheduledDate);
     }
     if (dto.plannedMiles !== undefined) data.plannedMiles = dto.plannedMiles;
     if (dto.workoutType !== undefined) data.workoutType = this.resolveWorkoutType(dto.workoutType);
@@ -419,10 +395,7 @@ export class TrainingBlockPlanService {
       workouts.map((item) => {
         const data: Record<string, unknown> = {};
         if (item.scheduledDate !== undefined) {
-          data.scheduledDate =
-            item.scheduledDate instanceof Date
-              ? item.scheduledDate
-              : new Date(item.scheduledDate);
+          data.scheduledDate = item.scheduledDate instanceof Date ? item.scheduledDate : new Date(item.scheduledDate);
         }
         if (item.plannedMiles !== undefined) data.plannedMiles = item.plannedMiles;
         if (item.workoutType !== undefined) {
@@ -442,11 +415,7 @@ export class TrainingBlockPlanService {
     return this.getPlan(trainingBlockId);
   }
 
-  async updateTrainingWeek(
-    trainingBlockId: string,
-    weekNumber: number,
-    dto: UpdateTrainingWeekDto,
-  ) {
+  async updateTrainingWeek(trainingBlockId: string, weekNumber: number, dto: UpdateTrainingWeekDto) {
     await this.ensureTrainingWeeks(
       trainingBlockId,
       (

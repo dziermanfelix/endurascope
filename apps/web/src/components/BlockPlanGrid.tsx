@@ -91,9 +91,6 @@ function PlanRow({
       </td>
       <td className='px-2 py-1 text-xs text-right'>{actual ? paceFromAverageSpeed(actual.averageSpeed) : ''}</td>
       <td className='px-2 py-1 text-xs text-right'>
-        {actual?.movingTime ? formatTimeFromSeconds(actual.movingTime) : ''}
-      </td>
-      <td className='px-2 py-1 text-xs text-right'>
         {actual?.elapsedTime ? formatTimeFromSeconds(actual.elapsedTime) : ''}
       </td>
       <td className='px-2 py-1 text-xs text-right'>{actual?.averageHeartRate ?? ''}</td>
@@ -126,7 +123,6 @@ function WeekSummaryRow({ summary }: { summary: PlanWeekSummary }) {
       </td>
       <td className='px-2 py-2 text-xs text-center border-l border-gray-200'>{summary.actualMiles.toFixed(2)}</td>
       <td className='px-2 py-2 text-xs text-right'>{averagePaceFromSummary(summary)}</td>
-      <td className='px-2 py-2 text-xs text-right'>{formatTimeFromSeconds(summary.totalMovingTime)}</td>
       <td className='px-2 py-2 text-xs text-right'>{formatTimeFromSeconds(summary.totalElapsedTime)}</td>
       <td className='px-2 py-2 text-xs text-right'>{averageHeartRateFromSummary(summary)}</td>
       <td className='px-2 py-2 text-xs text-right'>{summary.totalCalories || ''}</td>
@@ -195,7 +191,6 @@ const TABLE_HEADERS = (
       <th className='px-2 py-2 text-center border-l border-gray-300'>Miles</th>
       <th className='px-2 py-2 text-right'>Pace</th>
       <th className='px-2 py-2 text-right'>Time</th>
-      <th className='px-2 py-2 text-right'>Etime</th>
       <th className='px-2 py-2 text-right'>Avg HR</th>
       <th className='px-2 py-2 text-right'>Cal</th>
       <th className='px-2 py-2 text-right'>Asc</th>
