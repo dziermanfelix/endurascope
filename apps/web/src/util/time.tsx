@@ -1,5 +1,4 @@
 import { Activity } from '../types/activity';
-import type { WeekSummary } from './week';
 
 export const formatTimeFromSeconds = (seconds: number): string => {
   if (seconds === 0) return '0s';
@@ -15,35 +14,10 @@ export const formatTimeFromSeconds = (seconds: number): string => {
   return `${s}s`;
 };
 
-export const formatTimeFromHours = (hours: number): string => {
-  const h = Math.floor(hours);
-  const m = Math.floor((hours - h) * 60);
-  if (h > 0) {
-    return `${h}h ${m}m`;
-  }
-  return `${m}m`;
-};
-
 export const formatDate = (dateString: string | null): string => {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-};
-
-export const calculateAveragePaceFromSummary = (summary: WeekSummary): string | null => {
-  if (summary.totalMiles === 0 || summary.totalTime === 0) return null;
-  const secondsPerMile = summary.totalTime / summary.totalMiles;
-  const minutes = Math.floor(secondsPerMile / 60);
-  const seconds = Math.floor(secondsPerMile % 60);
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-};
-
-export const calculatePace = (miles: number, timeSeconds: number): string | null => {
-  if (miles === 0 || timeSeconds === 0) return null;
-  const secondsPerMile = timeSeconds / miles;
-  const minutes = Math.floor(secondsPerMile / 60);
-  const seconds = Math.floor(secondsPerMile % 60);
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
 export const formatPace = (averageSpeed: number | null): string | null => {
@@ -55,10 +29,6 @@ export const formatPace = (averageSpeed: number | null): string | null => {
     .toString()
     .padStart(2, '0');
   return `${minutes}:${seconds}`;
-};
-
-export const isSameDay = (a: Date, b: Date) => {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 };
 
 export const parseActivityDate = (activity: Activity): Date | null => {

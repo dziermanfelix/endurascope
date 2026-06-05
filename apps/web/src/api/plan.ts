@@ -23,8 +23,6 @@ export interface PlanWorkoutRow {
   scheduledDate: string;
   plannedMiles: number | null;
   workoutType: PlannedWorkoutType | null;
-  expectedActivityName: string | null;
-  activityId: string | null;
   actual: PlanActivityActual | null;
   diffMiles: number | null;
 }
@@ -69,7 +67,6 @@ export interface UpdatePlannedWorkoutDto {
   scheduledDate?: string;
   plannedMiles?: number | null;
   workoutType?: PlannedWorkoutType | null;
-  expectedActivityName?: string | null;
 }
 
 export async function fetchTrainingBlockPlan(blockId: string): Promise<TrainingBlockPlan> {
@@ -122,22 +119,6 @@ export async function updatePlannedWorkout(
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.message || 'Failed to update planned workout');
-  }
-  return response.json();
-}
-
-export async function bulkUpdatePlan(
-  blockId: string,
-  workouts: { id: string; expectedActivityName?: string | null }[],
-): Promise<TrainingBlockPlan> {
-  const response = await fetch(`${API_BASE_URL}/api/training-blocks/${blockId}/plan/bulk`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ workouts }),
-  });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || 'Failed to update plan');
   }
   return response.json();
 }

@@ -78,7 +78,6 @@ export class ActivityService {
             stravaId: BigInt(activity.id),
             name: activity.name || null,
             distance: activity.distance ? activity.distance / 1000 : null,
-            movingTime: activity.moving_time || null,
             elapsedTime: activity.elapsed_time || null,
             totalElevationGain: activity.total_elevation_gain || null,
             averageHeartRate: activity.average_heartrate || null,
@@ -92,7 +91,6 @@ export class ActivityService {
           update: {
             name: activity.name || null,
             distance: activity.distance ? activity.distance / 1000 : null,
-            movingTime: activity.moving_time || null,
             elapsedTime: activity.elapsed_time || null,
             totalElevationGain: activity.total_elevation_gain || null,
             averageHeartRate: activity.average_heartrate || null,

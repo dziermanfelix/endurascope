@@ -13,7 +13,6 @@ export interface Activity {
   stravaId: bigint | string;
   name: string | null;
   distance: number | null;
-  movingTime: number | null;
   elapsedTime: number | null;
   totalElevationGain: number | null;
   averageHeartRate: number | null;

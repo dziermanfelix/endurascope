@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PlannedWorkoutType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { BulkUpdatePlannedWorkoutItemDto, UpdatePlannedWorkoutDto, UpdateTrainingWeekDto } from './dto/plan.dto';
+import { UpdatePlannedWorkoutDto, UpdateTrainingWeekDto } from './dto/plan.dto';
 
 const PLANNED_WORKOUT_TYPES: PlannedWorkoutType[] = ['easy', 'workout', 'long'];
 
@@ -39,8 +39,6 @@ export interface PlanWorkoutRow {
   scheduledDate: string;
   plannedMiles: number | null;
   workoutType: PlannedWorkoutType | null;
-  expectedActivityName: string | null;
-  activityId: string | null;
   actual: PlanActivityActual | null;
   diffMiles: number | null;
 }
@@ -264,8 +262,6 @@ export class TrainingBlockPlanService {
         scheduledDate: workout.scheduledDate.toISOString(),
         plannedMiles: workout.plannedMiles,
         workoutType: workout.workoutType,
-        expectedActivityName: workout.expectedActivityName,
-        activityId: matched?.id ?? workout.activityId,
         actual,
         diffMiles,
       };
@@ -376,43 +372,10 @@ export class TrainingBlockPlanService {
     }
     if (dto.plannedMiles !== undefined) data.plannedMiles = dto.plannedMiles;
     if (dto.workoutType !== undefined) data.workoutType = this.resolveWorkoutType(dto.workoutType);
-    if (dto.expectedActivityName !== undefined) data.expectedActivityName = dto.expectedActivityName;
-    if (dto.activityId !== undefined) data.activityId = dto.activityId;
-
     return this.prisma.plannedWorkout.update({
       where: { id: workoutId },
       data: data as Parameters<PrismaService['plannedWorkout']['update']>[0]['data'],
     });
-  }
-
-  async bulkUpdatePlan(trainingBlockId: string, workouts: BulkUpdatePlannedWorkoutItemDto[]) {
-    const block = await this.prisma.trainingBlock.findUnique({ where: { id: trainingBlockId } });
-    if (!block) {
-      throw new NotFoundException('Training block not found');
-    }
-
-    await this.prisma.$transaction(
-      workouts.map((item) => {
-        const data: Record<string, unknown> = {};
-        if (item.scheduledDate !== undefined) {
-          data.scheduledDate = item.scheduledDate instanceof Date ? item.scheduledDate : new Date(item.scheduledDate);
-        }
-        if (item.plannedMiles !== undefined) data.plannedMiles = item.plannedMiles;
-        if (item.workoutType !== undefined) {
-          data.workoutType = this.resolveWorkoutType(item.workoutType);
-        }
-        if (item.expectedActivityName !== undefined) {
-          data.expectedActivityName = item.expectedActivityName;
-        }
-
-        return this.prisma.plannedWorkout.update({
-          where: { id: item.id, trainingBlockId },
-          data: data as Parameters<PrismaService['plannedWorkout']['update']>[0]['data'],
-        });
-      }),
-    );
-
-    return this.getPlan(trainingBlockId);
   }
 
   async updateTrainingWeek(trainingBlockId: string, weekNumber: number, dto: UpdateTrainingWeekDto) {

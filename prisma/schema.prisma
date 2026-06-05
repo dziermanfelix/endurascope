@@ -29,7 +29,6 @@ model Activity {
   stravaId              BigInt    @unique
   name                  String?
   distance              Float?    @default(0)
-  movingTime            Int?      @default(0)
   elapsedTime           Int?      @default(0)
   totalElevationGain    Float?    @default(0)
   averageHeartRate      Int?
@@ -41,8 +40,6 @@ model Activity {
   splitsStandard        Json?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
-
-  plannedWorkouts PlannedWorkout[]
 
   @@map("activities")
   @@index([stravaId])
@@ -99,14 +96,11 @@ model PlannedWorkout {
   scheduledDate        DateTime
   plannedMiles         Float?
   workoutType          PlannedWorkoutType?
-  expectedActivityName String?
   sortOrder            Int
-  activityId           String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
   trainingBlock TrainingBlock @relation(fields: [trainingBlockId], references: [id], onDelete: Cascade)
-  activity      Activity?     @relation(fields: [activityId], references: [id], onDelete: SetNull)
 
   @@unique([trainingBlockId, weekNumber, dayCode])
   @@index([trainingBlockId])

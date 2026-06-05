@@ -14,7 +14,7 @@ import {
 import { TrainingBlocksService } from './training-blocks.service';
 import { TrainingBlockPlanService } from './training-block-plan.service';
 import { CreateTrainingBlockDto, UpdateTrainingBlockDto } from './dto/training-block.dto';
-import { BulkUpdatePlanDto, UpdatePlannedWorkoutDto, UpdateTrainingWeekDto } from './dto/plan.dto';
+import { UpdatePlannedWorkoutDto, UpdateTrainingWeekDto } from './dto/plan.dto';
 
 @Controller('api/training-blocks')
 export class TrainingBlocksController {
@@ -107,28 +107,6 @@ export class TrainingBlocksController {
       }
       this.logger.error(`Error generating plan: ${error.message}`, error.stack);
       throw new HttpException(`Failed to generate plan: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  @Patch(':id/plan/bulk')
-  async bulkUpdatePlan(@Param('id') id: string, @Body() body: BulkUpdatePlanDto) {
-    try {
-      if (!body.workouts || !Array.isArray(body.workouts)) {
-        throw new HttpException('workouts array is required', HttpStatus.BAD_REQUEST);
-      }
-      return await this.planService.bulkUpdatePlan(id, body.workouts);
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      if (error instanceof BadRequestException) {
-        throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
-      }
-      if (error.name === 'NotFoundException') {
-        throw new HttpException('Training block not found', HttpStatus.NOT_FOUND);
-      }
-      this.logger.error(`Error bulk updating plan: ${error.message}`, error.stack);
-      throw new HttpException(`Failed to update plan: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
