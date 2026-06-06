@@ -13,6 +13,7 @@ export async function fetchActivities(): Promise<Activity[]> {
 export interface RefetchActivitiesResult {
   success: boolean;
   mode: 'incremental' | 'full';
+  skipped?: boolean;
   fetched: number;
   created: number;
   updated: number;

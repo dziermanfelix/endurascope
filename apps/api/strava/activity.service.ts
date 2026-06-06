@@ -16,8 +16,17 @@ export class ActivityService {
   ) {}
 
   async getLatestActivityStartDate(): Promise<Date | null> {
+    const latestLocal = await this.prisma.activity.findFirst({
+      where: { type: 'Run', startDateLocal: { not: null } },
+      orderBy: { startDateLocal: 'desc' },
+      select: { startDateLocal: true },
+    });
+    if (latestLocal?.startDateLocal) {
+      return latestLocal.startDateLocal;
+    }
+
     const latest = await this.prisma.activity.findFirst({
-      where: { type: 'Run' },
+      where: { type: 'Run', startDate: { not: null } },
       orderBy: { startDate: 'desc' },
       select: { startDate: true },
     });

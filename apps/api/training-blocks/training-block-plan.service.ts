@@ -137,6 +137,62 @@ export class TrainingBlockPlanService {
     return Math.round((actual - plannedMiles) * 100) / 100;
   }
 
+  private getBlockWindow(block: { startDate: Date; durationWeeks: number }) {
+    const startDate = new Date(block.startDate);
+    const startLocal = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate());
+    startLocal.setHours(0, 0, 0, 0);
+    const blockStartWeek = this.getWeekStart(startLocal);
+    const endLocal = new Date(startLocal);
+    endLocal.setDate(endLocal.getDate() + block.durationWeeks * 7);
+    return { startLocal, blockStartWeek, endLocal };
+  }
+
+  private getActivityWeekNumber(blockStartWeek: Date, activityLocal: Date, durationWeeks: number): number | null {
+    const diffDays = Math.floor((activityLocal.getTime() - blockStartWeek.getTime()) / MS_PER_DAY);
+    if (diffDays < 0) return null;
+    const weekNumber = Math.floor(diffDays / 7) + 1;
+    if (weekNumber > durationWeeks) return null;
+    return weekNumber;
+  }
+
+  private getDaySortOrder(activityLocal: Date): number {
+    const day = activityLocal.getDay();
+    return day === 0 ? 6 : day - 1;
+  }
+
+  private buildActivityRow(activity: {
+    id: string;
+    stravaId: bigint;
+    name: string | null;
+    distance: number | null;
+    elapsedTime: number | null;
+    averageHeartRate: number | null;
+    calories: number | null;
+    averageSpeed: number | null;
+    totalElevationGain: number | null;
+    startDateLocal: Date | null;
+  }, weekNumber: number): PlanWorkoutRow {
+    const activityLocal = this.toLocalDateOnly(activity.startDateLocal!);
+    const sortOrder = this.getDaySortOrder(activityLocal);
+    return {
+      id: `activity:${activity.id}`,
+      weekNumber,
+      dayCode: DAY_SLOTS[sortOrder].dayCode,
+      sortOrder,
+      scheduledDate: activity.startDateLocal!.toISOString(),
+      plannedMiles: null,
+      workoutType: null,
+      actual: this.formatActivity(activity),
+      diffMiles: null,
+    };
+  }
+
+  private sortWeekRows(rows: PlanWorkoutRow[]): PlanWorkoutRow[] {
+    return [...rows].sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.scheduledDate.localeCompare(b.scheduledDate),
+    );
+  }
+
   private async ensureTrainingWeeks(trainingBlockId: string, durationWeeks: number): Promise<void> {
     const existing = await this.prisma.trainingWeek.findMany({
       where: { trainingBlockId },
@@ -156,19 +212,14 @@ export class TrainingBlockPlanService {
     }
   }
 
-  async generatePlan(trainingBlockId: string): Promise<{ created: number; existing: number }> {
-    const block = await this.prisma.trainingBlock.findUnique({ where: { id: trainingBlockId } });
-    if (!block) {
-      throw new NotFoundException('Training block not found');
-    }
-
+  private async ensurePlanSkeleton(
+    trainingBlockId: string,
+    block: { startDate: Date; durationWeeks: number },
+  ): Promise<void> {
     const existingCount = await this.prisma.plannedWorkout.count({
       where: { trainingBlockId },
     });
-
-    if (existingCount > 0) {
-      return { created: 0, existing: existingCount };
-    }
+    if (existingCount > 0) return;
 
     const startDate = new Date(block.startDate);
     const startLocal = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate());
@@ -197,9 +248,27 @@ export class TrainingBlockPlanService {
     }
 
     await this.prisma.plannedWorkout.createMany({ data: rows });
+  }
+
+  async generatePlan(trainingBlockId: string): Promise<{ created: number; existing: number }> {
+    const block = await this.prisma.trainingBlock.findUnique({ where: { id: trainingBlockId } });
+    if (!block) {
+      throw new NotFoundException('Training block not found');
+    }
+
+    const existingCount = await this.prisma.plannedWorkout.count({
+      where: { trainingBlockId },
+    });
+
+    if (existingCount > 0) {
+      return { created: 0, existing: existingCount };
+    }
+
+    await this.ensurePlanSkeleton(trainingBlockId, block);
     await this.ensureTrainingWeeks(trainingBlockId, block.durationWeeks);
 
-    return { created: rows.length, existing: 0 };
+    const created = block.durationWeeks * DAY_SLOTS.length;
+    return { created, existing: 0 };
   }
 
   async getPlan(trainingBlockId: string): Promise<TrainingBlockPlanResponse> {
@@ -209,6 +278,7 @@ export class TrainingBlockPlanService {
     }
 
     await this.ensureTrainingWeeks(trainingBlockId, block.durationWeeks);
+    await this.ensurePlanSkeleton(trainingBlockId, block);
 
     const trainingWeeks = await this.prisma.trainingWeek.findMany({
       where: { trainingBlockId },
@@ -221,15 +291,14 @@ export class TrainingBlockPlanService {
       orderBy: [{ weekNumber: 'asc' }, { sortOrder: 'asc' }],
     });
 
-    const startDate = new Date(block.startDate);
-    const endDate = new Date(startDate.getTime() + block.durationWeeks * 7 * MS_PER_DAY);
+    const { startLocal, blockStartWeek, endLocal } = this.getBlockWindow(block);
 
     const activities = await this.prisma.activity.findMany({
       where: {
         type: 'Run',
         startDateLocal: {
-          gte: startDate,
-          lt: endDate,
+          gte: startLocal,
+          lt: endLocal,
         },
       },
       orderBy: { startDateLocal: 'asc' },
@@ -245,11 +314,16 @@ export class TrainingBlockPlanService {
     }
 
     const weekMap = new Map<number, PlanWorkoutRow[]>();
+    const matchedActivityIds = new Set<string>();
 
     for (const workout of plannedWorkouts) {
       const scheduledKey = this.toLocalDateOnly(workout.scheduledDate).toISOString();
       const dayActivities = activitiesByDate.get(scheduledKey) ?? [];
       const matched = dayActivities[0] ?? null;
+
+      if (matched) {
+        matchedActivityIds.add(matched.id);
+      }
 
       const actual = matched ? this.formatActivity(matched) : null;
       const diffMiles = this.computeDiffMiles(workout.plannedMiles, actual?.miles ?? null);
@@ -269,6 +343,23 @@ export class TrainingBlockPlanService {
       const weekRows = weekMap.get(workout.weekNumber) ?? [];
       weekRows.push(row);
       weekMap.set(workout.weekNumber, weekRows);
+    }
+
+    for (const activity of activities) {
+      if (!activity.startDateLocal || matchedActivityIds.has(activity.id)) continue;
+
+      const activityLocal = this.toLocalDateOnly(activity.startDateLocal);
+      const weekNumber = this.getActivityWeekNumber(blockStartWeek, activityLocal, block.durationWeeks);
+      if (weekNumber === null) continue;
+
+      const row = this.buildActivityRow(activity, weekNumber);
+      const weekRows = weekMap.get(weekNumber) ?? [];
+      weekRows.push(row);
+      weekMap.set(weekNumber, weekRows);
+    }
+
+    for (const [weekNumber, rows] of weekMap.entries()) {
+      weekMap.set(weekNumber, this.sortWeekRows(rows));
     }
 
     const weeks = Array.from(weekMap.entries())

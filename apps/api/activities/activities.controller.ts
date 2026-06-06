@@ -38,33 +38,81 @@ export class ActivitiesController {
   @Post('refetch')
   async refetchActivities(@Query('full') full?: string) {
     const isFull = full === 'true';
-    let mode: 'incremental' | 'full';
-    let activities;
+    const existingCount = await this.activityService.getActivityCount();
 
     if (isFull) {
-      mode = 'full';
-      activities = await this.stravaService.fetchActivities({ full: true });
-    } else {
-      const since = await this.activityService.getLatestActivityStartDate();
-      if (since) {
-        mode = 'incremental';
-        activities = await this.stravaService.fetchActivities({ after: since });
-      } else {
-        mode = 'full';
-        activities = await this.stravaService.fetchActivities({ full: true });
-      }
+      const activities = await this.stravaService.fetchActivities({ full: true });
+      const { created, updated } = await this.activityService.saveActivities(activities);
+      const count = await this.activityService.getActivityCount();
+      return {
+        success: true,
+        mode: 'full' as const,
+        fetched: activities.length,
+        created,
+        updated,
+        total: count,
+      };
     }
 
-    const { created, updated } = await this.activityService.saveActivities(activities);
-    const count = await this.activityService.getActivityCount();
-    return {
-      success: true,
-      mode,
-      fetched: activities.length,
-      created,
-      updated,
-      total: count,
-    };
+    const since = await this.activityService.getLatestActivityStartDate();
+    if (!since) {
+      if (existingCount > 0) {
+        this.logger.warn('Skipping Strava sync: local activities exist but no sync cursor date');
+        return {
+          success: true,
+          mode: 'incremental' as const,
+          skipped: true,
+          fetched: 0,
+          created: 0,
+          updated: 0,
+          total: existingCount,
+        };
+      }
+
+      const activities = await this.stravaService.fetchActivities({ full: true });
+      const { created, updated } = await this.activityService.saveActivities(activities);
+      const count = await this.activityService.getActivityCount();
+      return {
+        success: true,
+        mode: 'full' as const,
+        fetched: activities.length,
+        created,
+        updated,
+        total: count,
+      };
+    }
+
+    try {
+      const activities = await this.stravaService.fetchActivities({ after: since });
+      const { created, updated } = await this.activityService.saveActivities(activities);
+      const count = await this.activityService.getActivityCount();
+      return {
+        success: true,
+        mode: 'incremental' as const,
+        fetched: activities.length,
+        created,
+        updated,
+        total: count,
+      };
+    } catch (error) {
+      if (existingCount > 0) {
+        this.logger.warn(
+          `Incremental Strava sync failed, using ${existingCount} cached activities: ${error instanceof Error ? error.message : error}`,
+        );
+        return {
+          success: true,
+          mode: 'incremental' as const,
+          skipped: true,
+          fetched: 0,
+          created: 0,
+          updated: 0,
+          total: existingCount,
+        };
+      }
+
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new HttpException(`Failed to refetch activities from Strava: ${message}`, HttpStatus.BAD_GATEWAY);
+    }
   }
 
   @Put(':stravaId')

@@ -11,6 +11,7 @@ import {
   paceFromAverageSpeed,
 } from '../util/planFormat';
 import { blurOnEnter } from '../util/form';
+import { isActivityOnlyRow } from '../util/planWeeks';
 
 interface BlockPlanGridProps {
   plan: TrainingBlockPlan;
@@ -51,42 +52,51 @@ function PlanRow({
   );
 
   const actual = row.actual;
+  const readOnly = isActivityOnlyRow(row);
 
   return (
     <tr className={`border-b border-gray-100 ${saving ? 'opacity-60' : ''}`}>
       <td className='px-2 py-1 text-xs text-gray-500 whitespace-nowrap'>{formatPlanDate(row.scheduledDate)}</td>
       <td className='px-2 py-1 text-xs font-medium text-gray-700'>{row.dayCode}</td>
       <td className='px-1 py-1 text-center'>
-        <input
-          type='number'
-          step='0.01'
-          min='0'
-          defaultValue={row.plannedMiles ?? ''}
-          onKeyDown={blurOnEnter}
-          onBlur={(e) => {
-            const v = e.target.value === '' ? null : parseFloat(e.target.value);
-            if (v !== row.plannedMiles) saveField({ plannedMiles: v });
-          }}
-          className='w-14 mx-auto block text-xs border border-gray-200 rounded px-1 py-0.5 text-center'
-        />
+        {readOnly ? (
+          <span className='text-xs text-gray-400'>—</span>
+        ) : (
+          <input
+            type='number'
+            step='0.01'
+            min='0'
+            defaultValue={row.plannedMiles ?? ''}
+            onKeyDown={blurOnEnter}
+            onBlur={(e) => {
+              const v = e.target.value === '' ? null : parseFloat(e.target.value);
+              if (v !== row.plannedMiles) saveField({ plannedMiles: v });
+            }}
+            className='w-14 mx-auto block text-xs border border-gray-200 rounded px-1 py-0.5 text-center'
+          />
+        )}
       </td>
       <td className='px-1 py-1'>
-        <select
-          defaultValue={row.workoutType ?? ''}
-          onKeyDown={blurOnEnter}
-          onChange={(e) => {
-            const v = (e.target.value || null) as PlannedWorkoutType | null;
-            if (v !== row.workoutType) saveField({ workoutType: v });
-          }}
-          className='w-full min-w-[88px] text-xs border border-gray-200 rounded px-1 py-0.5 bg-white'
-        >
-          <option value=''>—</option>
-          {PLANNED_WORKOUT_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {formatWorkoutTypeLabel(type)}
-            </option>
-          ))}
-        </select>
+        {readOnly ? (
+          <span className='text-xs text-gray-400'>—</span>
+        ) : (
+          <select
+            defaultValue={row.workoutType ?? ''}
+            onKeyDown={blurOnEnter}
+            onChange={(e) => {
+              const v = (e.target.value || null) as PlannedWorkoutType | null;
+              if (v !== row.workoutType) saveField({ workoutType: v });
+            }}
+            className='w-full min-w-[88px] text-xs border border-gray-200 rounded px-1 py-0.5 bg-white'
+          >
+            <option value=''>—</option>
+            {PLANNED_WORKOUT_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {formatWorkoutTypeLabel(type)}
+              </option>
+            ))}
+          </select>
+        )}
       </td>
       <td className='px-2 py-1 text-xs font-mono text-gray-800 min-w-[90px]'>
         {actual ? (
