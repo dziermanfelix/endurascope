@@ -67,9 +67,3 @@ export function planMorningRunRenames(
     })
     .filter(({ activity, newName }) => activity.name?.trim().toLowerCase() !== newName.toLowerCase());
 }
-
-export function shouldShowCorrectNamesButton(blockActivities: Activity[], identifier: string): boolean {
-  const renamePlan = planMorningRunRenames(blockActivities, identifier);
-  if (renamePlan.length > 0) return true;
-  return false;
-}
