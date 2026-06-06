@@ -3,10 +3,10 @@ import { formatDurationHms, formatPace } from './time';
 
 export function formatPlanDate(isoDate: string): string {
   const d = new Date(isoDate);
-  const yy = String(d.getUTCFullYear()).slice(-2);
-  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(d.getUTCDate()).padStart(2, '0');
-  return `${yy}${mm}${dd}`;
+  const month = d.getUTCMonth() + 1;
+  const day = d.getUTCDate();
+  const year = String(d.getUTCFullYear()).slice(-2);
+  return `${month}/${day}/${year}`;
 }
 
 export function formatPaceShort(secondsPerMile: number): string {

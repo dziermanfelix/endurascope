@@ -26,7 +26,7 @@ function formatDiff(diff: number | null): string {
   return diff > 0 ? diff.toFixed(2) : diff.toFixed(2);
 }
 
-const PLAN_TABLE_COLS_BEFORE_ACTIVITY = [52, 32, 56, 104] as const;
+const PLAN_TABLE_COLS_BEFORE_ACTIVITY = [72, 32, 56, 104] as const;
 const PLAN_TABLE_COLS_AFTER_ACTIVITY = [52, 56, 68, 52, 48, 48, 56] as const;
 const PLAN_TABLE_ACTIVITY_MIN_WIDTH = 180;
 
