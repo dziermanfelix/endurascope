@@ -15,6 +15,7 @@ import { blurOnEnter } from '../util/form';
 interface BlockPlanGridProps {
   plan: TrainingBlockPlan;
   onPlanUpdated: (plan: TrainingBlockPlan) => void;
+  onActivityClick?: (activityId: string) => void;
 }
 
 function formatDiff(diff: number | null): string {
@@ -27,10 +28,12 @@ function PlanRow({
   row,
   blockId,
   onPlanUpdated,
+  onActivityClick,
 }: {
   row: PlanWorkoutRow;
   blockId: string;
   onPlanUpdated: (plan: TrainingBlockPlan) => void;
+  onActivityClick?: (activityId: string) => void;
 }) {
   const [saving, setSaving] = useState(false);
 
@@ -85,7 +88,17 @@ function PlanRow({
           ))}
         </select>
       </td>
-      <td className='px-2 py-1 text-xs font-mono text-gray-800 min-w-[90px]'>{actual?.name ?? ''}</td>
+      <td className='px-2 py-1 text-xs font-mono text-gray-800 min-w-[90px]'>
+        {actual ? (
+          <button
+            type='button'
+            onClick={() => onActivityClick?.(actual.id)}
+            className='text-left hover:text-orange-600 hover:underline cursor-pointer'
+          >
+            {actual.name ?? 'Unnamed Activity'}
+          </button>
+        ) : null}
+      </td>
       <td className='px-2 py-1 text-xs text-center border-l border-gray-200'>
         {actual?.miles != null ? actual.miles.toFixed(2) : ''}
       </td>
@@ -199,7 +212,7 @@ const TABLE_HEADERS = (
   </thead>
 );
 
-export function BlockPlanGrid({ plan, onPlanUpdated }: BlockPlanGridProps) {
+export function BlockPlanGrid({ plan, onPlanUpdated, onActivityClick }: BlockPlanGridProps) {
   return (
     <div>
       <div className='space-y-8'>
@@ -216,7 +229,13 @@ export function BlockPlanGrid({ plan, onPlanUpdated }: BlockPlanGridProps) {
                 {TABLE_HEADERS}
                 <tbody>
                   {week.rows.map((row) => (
-                    <PlanRow key={row.id} row={row} blockId={plan.block.id} onPlanUpdated={onPlanUpdated} />
+                    <PlanRow
+                      key={row.id}
+                      row={row}
+                      blockId={plan.block.id}
+                      onPlanUpdated={onPlanUpdated}
+                      onActivityClick={onActivityClick}
+                    />
                   ))}
                   <WeekSummaryRow summary={week.summary} />
                 </tbody>

@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { TrainingBlock } from '../api/training-blocks';
 import { fetchTrainingBlockPlan, generateTrainingBlockPlan, type TrainingBlockPlan } from '../api/plan';
+import { ActivityModal } from '../components/ActivityModal';
 import { BlockPlanGrid } from '../components/BlockPlanGrid';
 import { TrainingBlockSelector } from '../components/TrainingBlockSelector';
 import { WorkoutLegend } from '../components/WorkoutLegend';
 import { useActivities } from '../contexts/ActivitiesContext';
 import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
+import type { Activity } from '../types/activity';
 import { syncAndRenameForBlock } from '../util/blockActivitySync';
 
 export function BlockPlan() {
   const { selectedTrainingBlock } = useSelectedTrainingBlock();
-  const { loadActivities } = useActivities();
+  const { activities, loadActivities } = useActivities();
   const [plan, setPlan] = useState<TrainingBlockPlan | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +61,17 @@ export function BlockPlan() {
   };
 
   const hasWeeks = plan && plan.weeks.length > 0;
+
+  const handleActivityClick = (activityId: string) => {
+    const activity = activities.find((a) => a.id === activityId);
+    if (activity) setSelectedActivity(activity);
+  };
+
+  const refreshPlan = async () => {
+    if (!selectedTrainingBlock) return;
+    const data = await fetchTrainingBlockPlan(selectedTrainingBlock.id);
+    setPlan(data);
+  };
 
   return (
     <div>
@@ -121,7 +135,9 @@ export function BlockPlan() {
 
           {isLoading && <p className='text-gray-500'>Syncing runs and loading plan…</p>}
 
-          {!isLoading && plan && hasWeeks && <BlockPlanGrid plan={plan} onPlanUpdated={setPlan} />}
+          {!isLoading && plan && hasWeeks && (
+            <BlockPlanGrid plan={plan} onPlanUpdated={setPlan} onActivityClick={handleActivityClick} />
+          )}
 
           {!isLoading && plan && !hasWeeks && (
             <p className='text-gray-500'>
@@ -129,6 +145,14 @@ export function BlockPlan() {
             </p>
           )}
         </>
+      )}
+
+      {selectedActivity && (
+        <ActivityModal
+          activity={selectedActivity}
+          onClose={() => setSelectedActivity(null)}
+          onUpdated={refreshPlan}
+        />
       )}
     </div>
   );

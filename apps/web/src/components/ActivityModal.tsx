@@ -8,9 +8,10 @@ import { useActivities } from '../contexts/ActivitiesContext';
 interface ActivityModalProps {
   activity: Activity;
   onClose: () => void;
+  onUpdated?: () => void | Promise<void>;
 }
 
-export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
+export const ActivityModal = ({ activity, onClose, onUpdated }: ActivityModalProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(activity.name || '');
   const [nameBeforeEdit, setNameBeforeEdit] = useState(editedName);
@@ -54,6 +55,7 @@ export const ActivityModal = ({ activity, onClose }: ActivityModalProps) => {
       setEditedName(editedName.trim());
       setEditMessage('Name saved!');
       await loadActivities();
+      await onUpdated?.();
     } catch (error) {
       setEditMessage('Failed to save.');
     } finally {
