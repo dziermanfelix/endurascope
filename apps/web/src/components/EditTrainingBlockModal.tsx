@@ -6,7 +6,7 @@ import LoadingIcon from '../icons/LoadingIcon';
 interface EditTrainingBlockModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (block: TrainingBlock) => void;
   trainingBlock: TrainingBlock | null;
 }
 
@@ -43,12 +43,12 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
     setError(null);
 
     try {
-      await updateTrainingBlock(trainingBlock.id, {
+      const updated = await updateTrainingBlock(trainingBlock.id, {
         ...formData,
         goalTime: formData.goalTime?.trim() || null,
         goalDescription: formData.goalDescription?.trim() || null,
       });
-      onSuccess?.();
+      onSuccess?.(updated);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update training block');
@@ -70,13 +70,10 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center'>
-      {/* Backdrop */}
       <div className='absolute inset-0 bg-black bg-opacity-50' onClick={onClose} />
 
-      {/* Modal */}
       <div className='relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto'>
         <div className='p-6'>
-          {/* Header */}
           <div className='flex items-center justify-between mb-6'>
             <h2 className='text-2xl font-bold text-gray-900'>Edit Training Block</h2>
             <button
@@ -88,16 +85,13 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
             </button>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className='mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>
               <p className='text-sm'>{error}</p>
             </div>
           )}
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className='space-y-4'>
-            {/* Race Name */}
             <div>
               <label htmlFor='raceName' className='block text-sm font-medium text-gray-700 mb-1'>
                 Race Name *
@@ -114,7 +108,6 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
               />
             </div>
 
-            {/* Identifier */}
             <div>
               <label htmlFor='identifier' className='block text-sm font-medium text-gray-700 mb-1'>
                 Identifier *
@@ -132,7 +125,6 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
               <p className='mt-1 text-xs text-gray-500'>Short code to identify this training block</p>
             </div>
 
-            {/* Start Date */}
             <div>
               <label htmlFor='startDate' className='block text-sm font-medium text-gray-700 mb-1'>
                 Start Date *
@@ -148,7 +140,6 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
               />
             </div>
 
-            {/* Race Date */}
             <div>
               <label htmlFor='raceDate' className='block text-sm font-medium text-gray-700 mb-1'>
                 Race Date *
@@ -192,7 +183,6 @@ export function EditTrainingBlockModal({ isOpen, onClose, onSuccess, trainingBlo
               />
             </div>
 
-            {/* Buttons */}
             <div className='flex gap-3 pt-4'>
               <button
                 type='button'

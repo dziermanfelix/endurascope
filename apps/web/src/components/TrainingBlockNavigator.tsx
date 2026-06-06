@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CreateTrainingBlockModal } from './CreateTrainingBlockModal';
+import { EditTrainingBlockModal } from './EditTrainingBlockModal';
 import CreateIcon from '../icons/CreateIcon';
 import { useTrainingBlocks } from '../contexts/TrainingBlocksContext';
 import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
@@ -26,6 +27,7 @@ export function TrainingBlockNavigator() {
   const { trainingBlocks, loadTrainingBlocks } = useTrainingBlocks();
   const { selectedTrainingBlock, setSelectedTrainingBlock } = useSelectedTrainingBlock();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const sortedBlocks = useMemo(() => [...trainingBlocks].sort(byStartDateDesc), [trainingBlocks]);
   const currentIndex = selectedTrainingBlock
@@ -46,9 +48,24 @@ export function TrainingBlockNavigator() {
     }
   };
 
+  const handleEdited = async (block: TrainingBlock) => {
+    setSelectedTrainingBlock(block);
+    await loadTrainingBlocks();
+  };
+
   return (
     <>
       <div className='flex items-center gap-2'>
+        {selectedTrainingBlock && (
+          <button
+            type='button'
+            onClick={() => setIsEditModalOpen(true)}
+            className='px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700'
+          >
+            Edit
+          </button>
+        )}
+
         <button
           type='button'
           onClick={() => {
@@ -90,6 +107,13 @@ export function TrainingBlockNavigator() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleCreated}
+      />
+
+      <EditTrainingBlockModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSuccess={handleEdited}
+        trainingBlock={selectedTrainingBlock}
       />
     </>
   );

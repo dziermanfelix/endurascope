@@ -72,14 +72,3 @@ export async function updateTrainingBlock(id: string, data: UpdateTrainingBlockD
 
   return response.json();
 }
-
-export async function deleteTrainingBlock(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/training-blocks/${id}`, {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to delete training block');
-  }
-}
