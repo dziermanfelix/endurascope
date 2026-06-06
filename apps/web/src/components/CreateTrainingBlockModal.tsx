@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { createTrainingBlock, CreateTrainingBlockDto } from '../api/training-blocks';
+import { createTrainingBlock, CreateTrainingBlockDto, type TrainingBlock } from '../api/training-blocks';
 import CloseIcon from '../icons/CloseIcon';
 
 interface CreateTrainingBlockModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (block: TrainingBlock) => void;
 }
 
 export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateTrainingBlockModalProps) {
@@ -28,7 +28,7 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
     setError(null);
 
     try {
-      await createTrainingBlock({
+      const created = await createTrainingBlock({
         ...formData,
         goalTime: formData.goalTime?.trim() || undefined,
         goalDescription: formData.goalDescription?.trim() || undefined,
@@ -41,7 +41,7 @@ export function CreateTrainingBlockModal({ isOpen, onClose, onSuccess }: CreateT
         goalTime: '',
         goalDescription: '',
       });
-      onSuccess?.();
+      onSuccess?.(created);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create training block');
