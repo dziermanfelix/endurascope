@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 button {
-  @apply cursor-pointer disabled:cursor-not-allowed;
+  @apply cursor-pointer disabled:cursor-default;
 }
 
 /* Controlled by uiSettings.hideNumberInputSpinners — see config/ui.ts */

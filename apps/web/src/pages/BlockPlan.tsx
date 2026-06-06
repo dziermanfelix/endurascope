@@ -4,6 +4,8 @@ import { fetchTrainingBlockPlan, type TrainingBlockPlan } from '../api/plan';
 import { ActivityModal } from '../components/ActivityModal';
 import { BlockPlanGrid } from '../components/BlockPlanGrid';
 import { TrainingBlockNavigator } from '../components/TrainingBlockNavigator';
+import LockIcon from '../icons/LockIcon';
+import LoadingIcon from '../icons/LoadingIcon';
 import { useActivities } from '../contexts/ActivitiesContext';
 import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
 import type { Activity } from '../types/activity';
@@ -68,7 +70,14 @@ export function BlockPlan() {
     <div>
       <div className='flex flex-wrap items-center justify-between gap-4 mb-6'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900'>{selectedTrainingBlock?.raceName ?? 'Training Plan'}</h1>
+          <h1 className='flex items-center gap-2 text-2xl font-bold text-gray-900'>
+            {selectedTrainingBlock?.raceName ?? 'Training Plan'}
+            {selectedTrainingBlock?.locked && (
+              <span className='text-gray-400' title='This training block is locked'>
+                <LockIcon />
+              </span>
+            )}
+          </h1>
         </div>
         <TrainingBlockNavigator />
       </div>
@@ -83,7 +92,11 @@ export function BlockPlan() {
         <>
           {error && <div className='mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>{error}</div>}
 
-          {isLoading && <p className='text-gray-500'>Loading training block...</p>}
+          {isLoading && (
+            <div className='flex items-center justify-center min-h-[50vh]'>
+              <LoadingIcon className='h-8 w-8 animate-spin text-gray-400' />
+            </div>
+          )}
 
           {!isLoading && displayPlan && (
             <BlockPlanGrid

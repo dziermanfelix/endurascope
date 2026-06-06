@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Activity, ActivitySplit } from '../types/activity';
 import { formatDate, formatPace, formatTimeFromSeconds } from '../util/time';
 import CloseIcon from '../icons/CloseIcon';
 import { updateActivityName } from '../api/activities';
 import { useActivities } from '../contexts/ActivitiesContext';
+import { Modal } from './Modal';
 
 interface ActivityModalProps {
   activity: Activity;
@@ -19,16 +20,6 @@ export const ActivityModal = ({ activity, onClose, onUpdated }: ActivityModalPro
   const [editMessage, setEditMessage] = useState('');
 
   const { loadActivities } = useActivities();
-
-  useEffect(() => {
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isEditing) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [isEditing, onClose]);
 
   const handleNameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -114,175 +105,172 @@ export const ActivityModal = ({ activity, onClose, onUpdated }: ActivityModalPro
   };
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center p-4' onClick={onClose}>
-      {/* Backdrop */}
-      <div className='absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm' />
-      {/* Modal Content */}
-      <div
-        className='bg-white relative rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className='sticky top-0 flex items-start justify-between rounded-xl p-3' onClick={handleNameClick}>
-          <div className='flex-1'>
-            {activity.startDateLocal && (
-              <div className='text-sm text-gray-500 mb-2'>{formatDate(activity.startDateLocal)}</div>
+    <Modal
+      isOpen
+      onClose={onClose}
+      closeOnEscape={!isEditing}
+      containerClassName='p-4'
+      backdropClassName='absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm'
+      panelClassName='bg-white relative rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'
+    >
+      {/* Header */}
+      <div className='sticky top-0 flex items-start justify-between rounded-xl p-3' onClick={handleNameClick}>
+        <div className='flex-1'>
+          {activity.startDateLocal && (
+            <div className='text-sm text-gray-500 mb-2'>{formatDate(activity.startDateLocal)}</div>
+          )}
+          <div className='text-lg font-bold text-gray-900 hover:shadow-md hover:border-gray-300 hover:cursor-pointer shadow-sm border border-gray-200 transition-colors rounded p-2'>
+            {isEditing ? (
+              <input
+                type='text'
+                value={editedName}
+                onChange={handleNameChange}
+                onBlur={handleNameSubmit}
+                onKeyDown={handleKeyDown}
+                disabled={isSaving}
+                className='w-full outline-none border-none p-0 m-0'
+                autoFocus
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <h3>{editedName || 'Unnamed Activity'}</h3>
             )}
-            <div className='text-lg font-bold text-gray-900 hover:shadow-md hover:border-gray-300 hover:cursor-pointer shadow-sm border border-gray-200 transition-colors rounded p-2'>
-              {isEditing ? (
-                <input
-                  type='text'
-                  value={editedName}
-                  onChange={handleNameChange}
-                  onBlur={handleNameSubmit}
-                  onKeyDown={handleKeyDown}
-                  disabled={isSaving}
-                  className='w-full outline-none border-none p-0 m-0'
-                  autoFocus
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : (
-                <h3>{editedName || 'Unnamed Activity'}</h3>
-              )}
-            </div>
-            {editMessage && <div className='text-sm text-gray-500 mb-2'>{editMessage}</div>}
           </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            className='ml-4 text-gray-400 hover:text-gray-600 transition-colors'
-            aria-label='Close'
-          >
-            <CloseIcon />
-          </button>
+          {editMessage && <div className='text-sm text-gray-500 mb-2'>{editMessage}</div>}
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className='ml-4 text-gray-400 hover:text-gray-600 transition-colors'
+          aria-label='Close'
+        >
+          <CloseIcon />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className='p-6 space-y-6'>
+        {/* Primary stats */}
+        <div className='grid grid-cols-3 gap-6 pb-6 border-b border-gray-200'>
+          {activity.distance !== null ? (
+            <div className='text-center'>
+              <p className='text-4xl font-bold text-gray-900'>{activity.distance.toFixed(2)}</p>
+              <p className='text-sm text-gray-500 mt-1'>miles</p>
+            </div>
+          ) : (
+            <div className='text-center'>
+              <p className='text-4xl font-bold text-gray-400'>—</p>
+              <p className='text-sm text-gray-400 mt-1'>distance</p>
+            </div>
+          )}
+
+          {pace !== null ? (
+            <div className='text-center'>
+              <p className='text-4xl font-bold text-gray-900'>{pace}</p>
+              <p className='text-sm text-gray-500 mt-1'>pace</p>
+            </div>
+          ) : (
+            <div className='text-center'>
+              <p className='text-4xl font-bold text-gray-400'>—</p>
+              <p className='text-sm text-gray-400 mt-1'>pace</p>
+            </div>
+          )}
+
+          {activity.elapsedTime !== null ? (
+            <div className='text-center'>
+              <p className='text-4xl font-bold text-gray-900'>{formatTimeFromSeconds(activity.elapsedTime)}</p>
+              <p className='text-sm text-gray-500 mt-1'>time</p>
+            </div>
+          ) : (
+            <div className='text-center'>
+              <p className='text-4xl font-bold text-gray-400'>—</p>
+              <p className='text-sm text-gray-400 mt-1'>time</p>
+            </div>
+          )}
         </div>
 
-        {/* Content */}
-        <div className='p-6 space-y-6'>
-          {/* Primary stats */}
-          <div className='grid grid-cols-3 gap-6 pb-6 border-b border-gray-200'>
-            {activity.distance !== null ? (
-              <div className='text-center'>
-                <p className='text-4xl font-bold text-gray-900'>{activity.distance.toFixed(2)}</p>
-                <p className='text-sm text-gray-500 mt-1'>miles</p>
-              </div>
-            ) : (
-              <div className='text-center'>
-                <p className='text-4xl font-bold text-gray-400'>—</p>
-                <p className='text-sm text-gray-400 mt-1'>distance</p>
-              </div>
-            )}
+        {/* Additional stats */}
+        <div className='grid grid-cols-2 gap-6'>
+          {/* Activity type */}
+          {activity.type ? (
+            <div className='bg-gray-50 rounded-lg p-4'>
+              <p className='text-xs text-gray-500 mb-1'>Activity Type</p>
+              <p className='text-xl font-semibold text-gray-900'>{activity.type}</p>
+            </div>
+          ) : null}
 
-            {pace !== null ? (
-              <div className='text-center'>
-                <p className='text-4xl font-bold text-gray-900'>{pace}</p>
-                <p className='text-sm text-gray-500 mt-1'>pace</p>
-              </div>
-            ) : (
-              <div className='text-center'>
-                <p className='text-4xl font-bold text-gray-400'>—</p>
-                <p className='text-sm text-gray-400 mt-1'>pace</p>
-              </div>
-            )}
+          {/* Elevation gain */}
+          {elevationGainFeet !== null && elevationGainFeet > 0 ? (
+            <div className='bg-gray-50 rounded-lg p-4'>
+              <p className='text-xs text-gray-500 mb-1'>Elevation Gain</p>
+              <p className='text-xl font-semibold text-gray-900'>{elevationGainFeet.toLocaleString()} ft</p>
+            </div>
+          ) : null}
 
-            {activity.elapsedTime !== null ? (
-              <div className='text-center'>
-                <p className='text-4xl font-bold text-gray-900'>{formatTimeFromSeconds(activity.elapsedTime)}</p>
-                <p className='text-sm text-gray-500 mt-1'>time</p>
-              </div>
-            ) : (
-              <div className='text-center'>
-                <p className='text-4xl font-bold text-gray-400'>—</p>
-                <p className='text-sm text-gray-400 mt-1'>time</p>
-              </div>
-            )}
-          </div>
+          {/* Average speed */}
+          {averageSpeedMph !== null ? (
+            <div className='bg-gray-50 rounded-lg p-4'>
+              <p className='text-xs text-gray-500 mb-1'>Average Speed</p>
+              <p className='text-xl font-semibold text-gray-900'>{averageSpeedMph} mph</p>
+            </div>
+          ) : null}
 
-          {/* Additional stats */}
-          <div className='grid grid-cols-2 gap-6'>
-            {/* Activity type */}
-            {activity.type ? (
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-xs text-gray-500 mb-1'>Activity Type</p>
-                <p className='text-xl font-semibold text-gray-900'>{activity.type}</p>
-              </div>
-            ) : null}
+          {/* Heart rate */}
+          {activity.averageHeartRate !== null && activity.averageHeartRate > 0 ? (
+            <div className='bg-gray-50 rounded-lg p-4'>
+              <p className='text-xs text-gray-500 mb-1'>Average Heart Rate</p>
+              <p className='text-xl font-semibold text-gray-900'>{activity.averageHeartRate} bpm</p>
+            </div>
+          ) : null}
 
-            {/* Elevation gain */}
-            {elevationGainFeet !== null && elevationGainFeet > 0 ? (
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-xs text-gray-500 mb-1'>Elevation Gain</p>
-                <p className='text-xl font-semibold text-gray-900'>{elevationGainFeet.toLocaleString()} ft</p>
-              </div>
-            ) : null}
+          {/* Calories */}
+          {activity.calories !== null && activity.calories > 0 ? (
+            <div className='bg-gray-50 rounded-lg p-4'>
+              <p className='text-xs text-gray-500 mb-1'>Calories</p>
+              <p className='text-xl font-semibold text-gray-900'>{activity.calories.toLocaleString()}</p>
+            </div>
+          ) : null}
+        </div>
 
-            {/* Average speed */}
-            {averageSpeedMph !== null ? (
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-xs text-gray-500 mb-1'>Average Speed</p>
-                <p className='text-xl font-semibold text-gray-900'>{averageSpeedMph} mph</p>
-              </div>
-            ) : null}
+        <div>
+          <h4 className='text-sm font-semibold text-gray-900 mb-3'>Mile splits</h4>
+          {splits.length > 0 ? (
+            <div className='overflow-x-auto rounded-lg border border-gray-200'>
+              <table className='w-full text-sm'>
+                <thead>
+                  <tr className='bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wide'>
+                    <th className='px-3 py-2 font-medium'>Mile</th>
+                    <th className='px-3 py-2 font-medium'>Pace</th>
+                    <th className='px-3 py-2 font-medium'>Time</th>
+                    <th className='px-3 py-2 font-medium'>Elev</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {splits.map((split, index) => {
+                    const rowPace = formatPace(split.average_speed);
+                    const isFastest = index === fastestSplitIndex && splits.length > 1;
+                    const isSlowest = index === slowestSplitIndex && splits.length > 1;
+                    const rowClass = isFastest ? 'bg-green-50' : isSlowest ? 'bg-amber-50' : 'bg-white';
 
-            {/* Heart rate */}
-            {activity.averageHeartRate !== null && activity.averageHeartRate > 0 ? (
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-xs text-gray-500 mb-1'>Average Heart Rate</p>
-                <p className='text-xl font-semibold text-gray-900'>{activity.averageHeartRate} bpm</p>
-              </div>
-            ) : null}
-
-            {/* Calories */}
-            {activity.calories !== null && activity.calories > 0 ? (
-              <div className='bg-gray-50 rounded-lg p-4'>
-                <p className='text-xs text-gray-500 mb-1'>Calories</p>
-                <p className='text-xl font-semibold text-gray-900'>{activity.calories.toLocaleString()}</p>
-              </div>
-            ) : null}
-          </div>
-
-          <div>
-            <h4 className='text-sm font-semibold text-gray-900 mb-3'>Mile splits</h4>
-            {splits.length > 0 ? (
-              <div className='overflow-x-auto rounded-lg border border-gray-200'>
-                <table className='w-full text-sm'>
-                  <thead>
-                    <tr className='bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wide'>
-                      <th className='px-3 py-2 font-medium'>Mile</th>
-                      <th className='px-3 py-2 font-medium'>Pace</th>
-                      <th className='px-3 py-2 font-medium'>Time</th>
-                      <th className='px-3 py-2 font-medium'>Elev</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {splits.map((split, index) => {
-                      const rowPace = formatPace(split.average_speed);
-                      const isFastest = index === fastestSplitIndex && splits.length > 1;
-                      const isSlowest = index === slowestSplitIndex && splits.length > 1;
-                      const rowClass = isFastest ? 'bg-green-50' : isSlowest ? 'bg-amber-50' : 'bg-white';
-
-                      return (
-                        <tr key={split.split} className={`border-t border-gray-100 ${rowClass}`}>
-                          <td className='px-3 py-2 font-medium text-gray-900'>{formatSplitMileLabel(split)}</td>
-                          <td className='px-3 py-2 text-gray-900'>{rowPace ?? '—'}</td>
-                          <td className='px-3 py-2 text-gray-900'>{formatTimeFromSeconds(split.elapsed_time)}</td>
-                          <td className='px-3 py-2 text-gray-600'>
-                            {formatSplitElevation(split.elevation_difference)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className='text-sm text-gray-500'>No mile splits from Strava.</p>
-            )}
-          </div>
+                    return (
+                      <tr key={split.split} className={`border-t border-gray-100 ${rowClass}`}>
+                        <td className='px-3 py-2 font-medium text-gray-900'>{formatSplitMileLabel(split)}</td>
+                        <td className='px-3 py-2 text-gray-900'>{rowPace ?? '—'}</td>
+                        <td className='px-3 py-2 text-gray-900'>{formatTimeFromSeconds(split.elapsed_time)}</td>
+                        <td className='px-3 py-2 text-gray-600'>{formatSplitElevation(split.elevation_difference)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className='text-sm text-gray-500'>No mile splits from Strava.</p>
+          )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

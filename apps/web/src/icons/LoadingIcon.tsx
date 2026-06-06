@@ -1,6 +1,10 @@
-const LoadingIcon = () => {
+interface LoadingIconProps {
+  className?: string;
+}
+
+const LoadingIcon = ({ className = 'animate-spin -ml-1 mr-2 h-4 w-4 text-white' }: LoadingIconProps) => {
   return (
-    <svg className='animate-spin -ml-1 mr-2 h-4 w-4 text-white' fill='none' viewBox='0 0 24 24'>
+    <svg className={className} fill='none' viewBox='0 0 24 24' aria-hidden>
       <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
       <path
         className='opacity-75'

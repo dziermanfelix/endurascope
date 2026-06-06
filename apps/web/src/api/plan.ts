@@ -50,6 +50,7 @@ export interface TrainingBlockPlan {
     durationWeeks: number;
     goalTime: string | null;
     goalDescription: string | null;
+    locked: boolean;
   };
   weeks: {
     id: string;

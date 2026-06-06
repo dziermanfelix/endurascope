@@ -14,4 +14,5 @@ export class UpdateTrainingBlockDto {
   startDate?: Date;
   goalTime?: string | null;
   goalDescription?: string | null;
+  locked?: boolean;
 }

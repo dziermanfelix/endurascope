@@ -73,7 +73,7 @@ export function TrainingBlockNavigator() {
             selectBlock(sortedBlocks[currentIndex + 1]);
           }}
           disabled={!hasOlder}
-          className='p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent'
+          className='p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent'
           aria-label='Previous training block'
           title='Older block'
         >

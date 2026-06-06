@@ -73,6 +73,7 @@ export interface TrainingBlockPlanResponse {
     durationWeeks: number;
     goalTime: string | null;
     goalDescription: string | null;
+    locked: boolean;
   };
   weeks: {
     id: string;
@@ -215,6 +216,19 @@ export class TrainingBlockPlanService {
     }
   }
 
+  private async assertBlockEditable(trainingBlockId: string): Promise<void> {
+    const block = await this.prisma.trainingBlock.findUnique({
+      where: { id: trainingBlockId },
+      select: { locked: true },
+    });
+    if (!block) {
+      throw new NotFoundException('Training block not found');
+    }
+    if (block.locked) {
+      throw new BadRequestException('Training block is locked');
+    }
+  }
+
   private async ensurePlanSkeleton(
     trainingBlockId: string,
     block: { startDate: Date; durationWeeks: number },
@@ -254,6 +268,9 @@ export class TrainingBlockPlanService {
     const block = await this.prisma.trainingBlock.findUnique({ where: { id: trainingBlockId } });
     if (!block) {
       throw new NotFoundException('Training block not found');
+    }
+    if (block.locked) {
+      throw new BadRequestException('Training block is locked');
     }
 
     const existingCount = await this.prisma.plannedWorkout.count({
@@ -404,6 +421,7 @@ export class TrainingBlockPlanService {
         durationWeeks: block.durationWeeks,
         goalTime: block.goalTime,
         goalDescription: block.goalDescription,
+        locked: block.locked,
       },
       weeks,
     };
@@ -461,6 +479,8 @@ export class TrainingBlockPlanService {
   }
 
   async updatePlannedWorkout(trainingBlockId: string, workoutId: string, dto: UpdatePlannedWorkoutDto) {
+    await this.assertBlockEditable(trainingBlockId);
+
     const workout = await this.prisma.plannedWorkout.findFirst({
       where: { id: workoutId, trainingBlockId },
     });
@@ -482,6 +502,8 @@ export class TrainingBlockPlanService {
   }
 
   async updateTrainingWeek(trainingBlockId: string, weekNumber: number, dto: UpdateTrainingWeekDto) {
+    await this.assertBlockEditable(trainingBlockId);
+
     await this.ensureTrainingWeeks(
       trainingBlockId,
       (

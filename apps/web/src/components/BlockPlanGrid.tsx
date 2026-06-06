@@ -49,11 +49,13 @@ const PLAN_TABLE_COLGROUP = (
 function PlanRow({
   row,
   blockId,
+  blockLocked,
   onPlanUpdated,
   onActivityClick,
 }: {
   row: PlanWorkoutRow;
   blockId: string;
+  blockLocked: boolean;
   onPlanUpdated: (plan: TrainingBlockPlan) => void;
   onActivityClick?: (activityId: string) => void;
 }) {
@@ -73,15 +75,17 @@ function PlanRow({
   );
 
   const actual = row.actual;
-  const readOnly = isActivityOnlyRow(row);
+  const activityOnly = isActivityOnlyRow(row);
 
   return (
     <tr className={`border-b border-gray-100 ${saving ? 'opacity-60' : ''}`}>
       <td className='px-2 py-1 text-xs text-gray-500 whitespace-nowrap'>{formatPlanDate(row.scheduledDate)}</td>
       <td className='px-2 py-1 text-xs font-medium text-gray-700'>{row.dayCode}</td>
       <td className='px-2 pr-4 py-1 text-center'>
-        {readOnly ? (
+        {activityOnly ? (
           <span className='text-xs text-gray-400'>—</span>
+        ) : blockLocked ? (
+          <span className='text-xs text-gray-700'>{row.plannedMiles ?? ''}</span>
         ) : (
           <input
             type='number'
@@ -98,8 +102,12 @@ function PlanRow({
         )}
       </td>
       <td className='pl-3 pr-2 py-1'>
-        {readOnly ? (
+        {activityOnly ? (
           <span className='text-xs text-gray-400'>—</span>
+        ) : blockLocked ? (
+          <span className='text-xs text-gray-700'>
+            {row.workoutType ? formatWorkoutTypeLabel(row.workoutType) : ''}
+          </span>
         ) : (
           <select
             defaultValue={row.workoutType ?? ''}
@@ -187,11 +195,13 @@ function WeekSectionHeader({
   weekNumber,
   story,
   blockId,
+  blockLocked,
   onPlanUpdated,
 }: {
   weekNumber: number;
   story: string | null;
   blockId: string;
+  blockLocked: boolean;
   onPlanUpdated: (plan: TrainingBlockPlan) => void;
 }) {
   const [saving, setSaving] = useState(false);
@@ -204,7 +214,8 @@ function WeekSectionHeader({
         <input
           type='text'
           defaultValue={story ?? ''}
-          disabled={saving}
+          disabled={saving || blockLocked}
+          readOnly={blockLocked}
           onKeyDown={blurOnEnter}
           onBlur={async (e) => {
             const v = e.target.value.trim() || null;
@@ -245,6 +256,8 @@ const TABLE_HEADERS = (
 );
 
 export function BlockPlanGrid({ plan, onPlanUpdated, onActivityClick }: BlockPlanGridProps) {
+  const blockLocked = plan.block.locked;
+
   return (
     <div className='min-w-0'>
       <div className='space-y-8'>
@@ -254,6 +267,7 @@ export function BlockPlanGrid({ plan, onPlanUpdated, onActivityClick }: BlockPla
               weekNumber={week.weekNumber}
               story={week.story}
               blockId={plan.block.id}
+              blockLocked={blockLocked}
               onPlanUpdated={onPlanUpdated}
             />
             <div className='w-full min-w-0 overflow-x-auto border border-gray-200 rounded-lg bg-white'>
@@ -266,6 +280,7 @@ export function BlockPlanGrid({ plan, onPlanUpdated, onActivityClick }: BlockPla
                       key={row.id}
                       row={row}
                       blockId={plan.block.id}
+                      blockLocked={blockLocked}
                       onPlanUpdated={onPlanUpdated}
                       onActivityClick={onActivityClick}
                     />
