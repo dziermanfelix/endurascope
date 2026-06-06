@@ -1,5 +1,12 @@
 import { Activity } from '../types/activity';
 
+export function formatDurationHms(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  return [h, m, s].map((part) => part.toString().padStart(2, '0')).join(':');
+}
+
 export const formatTimeFromSeconds = (seconds: number): string => {
   if (seconds === 0) return '0s';
   const h = Math.floor(seconds / 3600);

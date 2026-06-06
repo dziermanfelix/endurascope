@@ -5,9 +5,10 @@ import { formatWorkoutTypeLabel, PLANNED_WORKOUT_TYPES, type PlannedWorkoutType 
 import {
   averageHeartRateFromSummary,
   averagePaceFromSummary,
+  elapsedTimeFromSeconds,
+  elapsedTimeFromSummary,
   formatElevationFeet,
   formatPlanDate,
-  formatTimeFromSeconds,
   paceFromAverageSpeed,
 } from '../util/planFormat';
 import { blurOnEnter } from '../util/form';
@@ -24,6 +25,26 @@ function formatDiff(diff: number | null): string {
   if (diff === 0) return '0.00';
   return diff > 0 ? diff.toFixed(2) : diff.toFixed(2);
 }
+
+const PLAN_TABLE_COLS_BEFORE_ACTIVITY = [52, 32, 56, 104] as const;
+const PLAN_TABLE_COLS_AFTER_ACTIVITY = [52, 56, 68, 52, 48, 48, 56] as const;
+const PLAN_TABLE_ACTIVITY_MIN_WIDTH = 180;
+
+const PLAN_TABLE_MIN_WIDTH =
+  [...PLAN_TABLE_COLS_BEFORE_ACTIVITY, ...PLAN_TABLE_COLS_AFTER_ACTIVITY].reduce((sum, width) => sum + width, 0) +
+  PLAN_TABLE_ACTIVITY_MIN_WIDTH;
+
+const PLAN_TABLE_COLGROUP = (
+  <colgroup>
+    {PLAN_TABLE_COLS_BEFORE_ACTIVITY.map((width, index) => (
+      <col key={`before-${index}`} style={{ width }} />
+    ))}
+    <col />
+    {PLAN_TABLE_COLS_AFTER_ACTIVITY.map((width, index) => (
+      <col key={`after-${index}`} style={{ width }} />
+    ))}
+  </colgroup>
+);
 
 function PlanRow({
   row,
@@ -98,12 +119,13 @@ function PlanRow({
           </select>
         )}
       </td>
-      <td className='px-2 py-1 text-xs font-mono text-gray-800 min-w-[90px]'>
+      <td className='px-2 py-1 text-xs font-mono text-gray-800 overflow-hidden'>
         {actual ? (
           <button
             type='button'
             onClick={() => onActivityClick?.(actual.id)}
-            className='text-left hover:text-orange-600 hover:underline cursor-pointer'
+            title={actual.name ?? 'Unnamed Activity'}
+            className='block w-full truncate text-left hover:text-orange-600 hover:underline cursor-pointer'
           >
             {actual.name ?? 'Unnamed Activity'}
           </button>
@@ -113,9 +135,7 @@ function PlanRow({
         {actual?.miles != null ? actual.miles.toFixed(2) : ''}
       </td>
       <td className='px-2 py-1 text-xs text-right'>{actual ? paceFromAverageSpeed(actual.averageSpeed) : ''}</td>
-      <td className='px-2 py-1 text-xs text-right'>
-        {actual?.elapsedTime ? formatTimeFromSeconds(actual.elapsedTime) : ''}
-      </td>
+      <td className='px-2 py-1 text-xs text-right'>{elapsedTimeFromSeconds(actual?.elapsedTime)}</td>
       <td className='px-2 py-1 text-xs text-right'>{actual?.averageHeartRate ?? ''}</td>
       <td className='px-2 py-1 text-xs text-right'>{actual?.calories ?? ''}</td>
       <td className='px-2 py-1 text-xs text-right'>{formatElevationFeet(actual?.totalElevationGain ?? null)}</td>
@@ -146,7 +166,7 @@ function WeekSummaryRow({ summary }: { summary: PlanWeekSummary }) {
       </td>
       <td className='px-2 py-2 text-xs text-center border-l border-gray-200'>{summary.actualMiles.toFixed(2)}</td>
       <td className='px-2 py-2 text-xs text-right'>{averagePaceFromSummary(summary)}</td>
-      <td className='px-2 py-2 text-xs text-right'>{formatTimeFromSeconds(summary.totalElapsedTime)}</td>
+      <td className='px-2 py-2 text-xs text-right'>{elapsedTimeFromSummary(summary)}</td>
       <td className='px-2 py-2 text-xs text-right'>{averageHeartRateFromSummary(summary)}</td>
       <td className='px-2 py-2 text-xs text-right'>{summary.totalCalories || ''}</td>
       <td className='px-2 py-2 text-xs text-right'>
@@ -226,18 +246,19 @@ const TABLE_HEADERS = (
 
 export function BlockPlanGrid({ plan, onPlanUpdated, onActivityClick }: BlockPlanGridProps) {
   return (
-    <div>
+    <div className='min-w-0'>
       <div className='space-y-8'>
         {plan.weeks.map((week) => (
-          <section key={week.weekNumber}>
+          <section key={week.weekNumber} className='min-w-0'>
             <WeekSectionHeader
               weekNumber={week.weekNumber}
               story={week.story}
               blockId={plan.block.id}
               onPlanUpdated={onPlanUpdated}
             />
-            <div className='overflow-x-auto border border-gray-200 rounded-lg bg-white'>
-              <table className='w-full min-w-[1100px] border-collapse'>
+            <div className='w-full min-w-0 overflow-x-auto border border-gray-200 rounded-lg bg-white'>
+              <table className='w-full table-fixed border-collapse' style={{ minWidth: PLAN_TABLE_MIN_WIDTH }}>
+                {PLAN_TABLE_COLGROUP}
                 {TABLE_HEADERS}
                 <tbody>
                   {week.rows.map((row) => (

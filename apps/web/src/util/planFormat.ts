@@ -1,5 +1,5 @@
 import type { PlanWeekSummary } from '../api/plan';
-import { formatPace, formatTimeFromSeconds } from './time';
+import { formatDurationHms, formatPace } from './time';
 
 export function formatPlanDate(isoDate: string): string {
   const d = new Date(isoDate);
@@ -35,4 +35,12 @@ export function formatElevationFeet(meters: number | null): string {
   return Math.round(meters * 3.28084).toString();
 }
 
-export { formatTimeFromSeconds };
+export function elapsedTimeFromSeconds(seconds: number | null | undefined): string {
+  if (!seconds) return '';
+  return formatDurationHms(seconds);
+}
+
+export function elapsedTimeFromSummary(summary: PlanWeekSummary): string {
+  if (!summary.totalElapsedTime) return '';
+  return formatDurationHms(summary.totalElapsedTime);
+}
