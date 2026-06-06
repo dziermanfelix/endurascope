@@ -34,6 +34,7 @@ export interface PlanWeekSummary {
   actualMiles: number;
   totalElapsedTime: number;
   totalCalories: number;
+  totalElevationGain: number;
   heartRateSum: number;
   heartRateCount: number;
   diffMiles: number;

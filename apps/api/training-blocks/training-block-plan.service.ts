@@ -50,6 +50,7 @@ export interface PlanWeekSummary {
   actualMiles: number;
   totalElapsedTime: number;
   totalCalories: number;
+  totalElevationGain: number;
   heartRateSum: number;
   heartRateCount: number;
   diffMiles: number;
@@ -409,6 +410,7 @@ export class TrainingBlockPlanService {
     let actualMiles = 0;
     let totalElapsedTime = 0;
     let totalCalories = 0;
+    let totalElevationGain = 0;
     let heartRateSum = 0;
     let heartRateCount = 0;
     let diffMiles = 0;
@@ -427,6 +429,9 @@ export class TrainingBlockPlanService {
       if (row.actual?.calories) {
         totalCalories += row.actual.calories;
       }
+      if (row.actual?.totalElevationGain) {
+        totalElevationGain += row.actual.totalElevationGain;
+      }
       if (row.actual?.averageHeartRate && row.actual.averageHeartRate > 0) {
         heartRateSum += row.actual.averageHeartRate;
         heartRateCount += 1;
@@ -443,6 +448,7 @@ export class TrainingBlockPlanService {
       actualMiles: Math.round(actualMiles * 100) / 100,
       totalElapsedTime,
       totalCalories,
+      totalElevationGain,
       heartRateSum,
       heartRateCount,
       diffMiles: Math.round(diffMiles * 100) / 100,

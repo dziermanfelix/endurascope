@@ -8,6 +8,7 @@ function emptyWeekSummary(weekNumber: number): PlanWeekSummary {
     actualMiles: 0,
     totalElapsedTime: 0,
     totalCalories: 0,
+    totalElevationGain: 0,
     heartRateSum: 0,
     heartRateCount: 0,
     diffMiles: 0,

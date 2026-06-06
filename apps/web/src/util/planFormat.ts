@@ -31,7 +31,7 @@ export function averageHeartRateFromSummary(summary: PlanWeekSummary): string {
 }
 
 export function formatElevationFeet(meters: number | null): string {
-  if (meters === null) return '—';
+  if (meters === null) return '';
   return Math.round(meters * 3.28084).toString();
 }
 

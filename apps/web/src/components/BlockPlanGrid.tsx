@@ -149,7 +149,9 @@ function WeekSummaryRow({ summary }: { summary: PlanWeekSummary }) {
       <td className='px-2 py-2 text-xs text-right'>{formatTimeFromSeconds(summary.totalElapsedTime)}</td>
       <td className='px-2 py-2 text-xs text-right'>{averageHeartRateFromSummary(summary)}</td>
       <td className='px-2 py-2 text-xs text-right'>{summary.totalCalories || ''}</td>
-      <td />
+      <td className='px-2 py-2 text-xs text-right'>
+        {summary.totalElevationGain ? formatElevationFeet(summary.totalElevationGain) : ''}
+      </td>
       <td
         className={`px-2 py-2 text-xs text-right ${
           summary.diffMiles < 0 ? 'text-red-600' : summary.diffMiles > 0 ? 'text-green-600' : ''
