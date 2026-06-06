@@ -1,38 +1,47 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { TrainingBlock } from '../api/training-blocks';
 import { fetchTrainingBlockPlan, generateTrainingBlockPlan, type TrainingBlockPlan } from '../api/plan';
 import { BlockPlanGrid } from '../components/BlockPlanGrid';
 import { TrainingBlockSelector } from '../components/TrainingBlockSelector';
 import { WorkoutLegend } from '../components/WorkoutLegend';
+import { useActivities } from '../contexts/ActivitiesContext';
 import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
+import { syncAndRenameForBlock } from '../util/blockActivitySync';
 
 export function BlockPlan() {
   const { selectedTrainingBlock } = useSelectedTrainingBlock();
+  const { loadActivities } = useActivities();
   const [plan, setPlan] = useState<TrainingBlockPlan | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadPlan = useCallback(async (blockId: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await fetchTrainingBlockPlan(blockId);
-      setPlan(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load plan');
-      setPlan(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const syncAndLoadPlan = useCallback(
+    async (block: TrainingBlock) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        await syncAndRenameForBlock(block);
+        await loadActivities();
+        const data = await fetchTrainingBlockPlan(block.id);
+        setPlan(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load plan');
+        setPlan(null);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [loadActivities],
+  );
 
   useEffect(() => {
     if (!selectedTrainingBlock) {
       setPlan(null);
       return;
     }
-    loadPlan(selectedTrainingBlock.id);
-  }, [selectedTrainingBlock, loadPlan]);
+    syncAndLoadPlan(selectedTrainingBlock);
+  }, [selectedTrainingBlock, syncAndLoadPlan]);
 
   const handleGenerate = async () => {
     if (!selectedTrainingBlock) return;
@@ -40,7 +49,7 @@ export function BlockPlan() {
     setError(null);
     try {
       await generateTrainingBlockPlan(selectedTrainingBlock.id);
-      await loadPlan(selectedTrainingBlock.id);
+      await syncAndLoadPlan(selectedTrainingBlock);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate plan');
     } finally {
@@ -73,7 +82,7 @@ export function BlockPlan() {
           <div className='mb-4 flex flex-wrap items-center gap-3'>
             <button
               type='button'
-              onClick={() => loadPlan(selectedTrainingBlock.id)}
+              onClick={() => syncAndLoadPlan(selectedTrainingBlock)}
               disabled={isLoading}
               className='text-sm px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50'
             >
@@ -95,8 +104,7 @@ export function BlockPlan() {
             <div className='mb-6 p-4 bg-white border border-gray-200 rounded-lg'>
               <h2 className='text-xl font-semibold text-gray-900'>{plan.block.raceName}</h2>
               <p className='text-sm text-gray-600 mt-1'>
-                {plan.block.durationWeeks} weeks · identifier{' '}
-                <span className='font-mono'>{plan.block.identifier}</span>
+                {plan.block.durationWeeks} weeks · identifier <span className='font-mono'>{plan.block.identifier}</span>
               </p>
               {(plan.block.goalDescription || plan.block.goalTime) && (
                 <p className='text-sm text-gray-700 mt-2'>
@@ -109,16 +117,16 @@ export function BlockPlan() {
 
           <WorkoutLegend />
 
-          {error && (
-            <div className='mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>{error}</div>
-          )}
+          {error && <div className='mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>{error}</div>}
 
-          {isLoading && <p className='text-gray-500'>Loading plan…</p>}
+          {isLoading && <p className='text-gray-500'>Syncing runs and loading plan…</p>}
 
           {!isLoading && plan && hasWeeks && <BlockPlanGrid plan={plan} onPlanUpdated={setPlan} />}
 
           {!isLoading && plan && !hasWeeks && (
-            <p className='text-gray-500'>No plan rows yet. Click &quot;Generate plan grid&quot; to create the skeleton.</p>
+            <p className='text-gray-500'>
+              No plan rows yet. Click &quot;Generate plan grid&quot; to create the skeleton.
+            </p>
           )}
         </>
       )}
