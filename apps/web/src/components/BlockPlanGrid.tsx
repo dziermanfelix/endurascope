@@ -79,7 +79,7 @@ function PlanRow({
     <tr className={`border-b border-gray-100 ${saving ? 'opacity-60' : ''}`}>
       <td className='px-2 py-1 text-xs text-gray-500 whitespace-nowrap'>{formatPlanDate(row.scheduledDate)}</td>
       <td className='px-2 py-1 text-xs font-medium text-gray-700'>{row.dayCode}</td>
-      <td className='px-1 py-1 text-center'>
+      <td className='px-2 pr-4 py-1 text-center'>
         {readOnly ? (
           <span className='text-xs text-gray-400'>—</span>
         ) : (
@@ -97,7 +97,7 @@ function PlanRow({
           />
         )}
       </td>
-      <td className='px-1 py-1'>
+      <td className='pl-3 pr-2 py-1'>
         {readOnly ? (
           <span className='text-xs text-gray-400'>—</span>
         ) : (
@@ -160,8 +160,8 @@ function WeekSummaryRow({ summary }: { summary: PlanWeekSummary }) {
       <td colSpan={2} className='px-2 py-2 text-xs text-gray-600'>
         Week {summary.weekNumber} total
       </td>
-      <td className='px-2 py-2 text-xs text-center'>{summary.plannedMiles.toFixed(2)}</td>
-      <td colSpan={2} className='px-2 py-2 text-xs text-gray-500'>
+      <td className='px-2 pr-4 py-2 text-xs text-center'>{summary.plannedMiles.toFixed(2)}</td>
+      <td colSpan={2} className='pl-3 pr-2 py-2 text-xs text-gray-500'>
         {summary.plannedRuns} planned runs
       </td>
       <td className='px-2 py-2 text-xs text-center border-l border-gray-200'>{summary.actualMiles.toFixed(2)}</td>
@@ -230,8 +230,8 @@ const TABLE_HEADERS = (
     <tr className='bg-gray-100 text-xs text-gray-600 uppercase tracking-wide'>
       <th className='px-2 py-2 text-left'>Date</th>
       <th className='px-2 py-2 text-left'>Day</th>
-      <th className='px-2 py-2 text-center'>Miles*</th>
-      <th className='px-2 py-2 text-left'>Type</th>
+      <th className='px-2 pr-4 py-2 text-center'>Miles*</th>
+      <th className='pl-3 pr-2 py-2 text-left'>Type</th>
       <th className='px-2 py-2 text-left'>Activity</th>
       <th className='px-2 py-2 text-center border-l border-gray-300'>Miles</th>
       <th className='px-2 py-2 text-right'>Pace</th>
