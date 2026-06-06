@@ -40,5 +40,6 @@ export const formatPace = (averageSpeed: number | null): string | null => {
 
 export const parseActivityDate = (activity: Activity): Date | null => {
   if (!activity.startDateLocal) return null;
-  return new Date(activity.startDateLocal);
+  const d = new Date(activity.startDateLocal);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12, 0, 0, 0));
 };

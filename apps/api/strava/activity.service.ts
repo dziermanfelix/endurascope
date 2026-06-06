@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { parseStravaStartDateLocal } from '../common/local-date';
 import { PrismaService } from '../prisma/prisma.service';
 import { StravaActivity, StravaService, StravaSplit } from './strava.service';
 
@@ -94,7 +95,7 @@ export class ActivityService {
             averageSpeed: activity.average_speed || null,
             type: activityType,
             startDate: activity.start_date ? new Date(activity.start_date) : null,
-            startDateLocal: activity.start_date_local ? new Date(activity.start_date_local) : null,
+            startDateLocal: activity.start_date_local ? parseStravaStartDateLocal(activity.start_date_local) : null,
             splitsStandard,
           },
           update: {
@@ -107,7 +108,7 @@ export class ActivityService {
             averageSpeed: activity.average_speed || null,
             type: activityType,
             startDate: activity.start_date ? new Date(activity.start_date) : null,
-            startDateLocal: activity.start_date_local ? new Date(activity.start_date_local) : null,
+            startDateLocal: activity.start_date_local ? parseStravaStartDateLocal(activity.start_date_local) : null,
             ...(needsDetailedFetch && { splitsStandard }),
           },
         });

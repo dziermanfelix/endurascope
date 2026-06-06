@@ -1,23 +1,21 @@
 import type { Activity } from '../types/activity';
 import type { TrainingBlock } from '../api/training-blocks';
-import { parseActivityDate } from './time';
+
+function normalizeUtcDateOnly(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 12, 0, 0, 0));
+}
 
 function getBlockWindow(block: TrainingBlock): { start: Date; end: Date } {
-  const start = new Date(block.startDate);
-  const startLocal = new Date(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
-  startLocal.setHours(0, 0, 0, 0);
-
-  const end = new Date(startLocal);
-  end.setDate(end.getDate() + block.durationWeeks * 7);
-
-  return { start: startLocal, end };
+  const start = normalizeUtcDateOnly(new Date(block.startDate));
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + block.durationWeeks * 7);
+  return { start, end };
 }
 
 function isActivityInBlock(activity: Activity, block: TrainingBlock): boolean {
-  const activityDate = parseActivityDate(activity);
-  if (!activityDate) return false;
+  if (!activity.startDateLocal) return false;
 
-  const activityMidnight = new Date(activityDate.getFullYear(), activityDate.getMonth(), activityDate.getDate());
+  const activityMidnight = normalizeUtcDateOnly(new Date(activity.startDateLocal));
   const { start, end } = getBlockWindow(block);
 
   return activityMidnight >= start && activityMidnight < end;

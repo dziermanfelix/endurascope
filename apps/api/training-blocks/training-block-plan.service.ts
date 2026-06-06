@@ -1,5 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PlannedWorkoutType } from '@prisma/client';
+import {
+  addUtcDays,
+  getDaySortOrderUtc,
+  getWeekStartUtc,
+  normalizeToUtcDateOnly,
+  toDateKey,
+} from '../common/local-date';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdatePlannedWorkoutDto, UpdateTrainingWeekDto } from './dto/plan.dto';
 
@@ -91,31 +98,29 @@ export class TrainingBlockPlanService {
     return value as PlannedWorkoutType;
   }
 
-  private getWeekStart(date: Date): Date {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
-    d.setHours(0, 0, 0, 0);
-    return d;
+  private getBlockWindow(block: { startDate: Date; durationWeeks: number }) {
+    const startLocal = normalizeToUtcDateOnly(block.startDate);
+    const blockStartWeek = getWeekStartUtc(startLocal);
+    const endLocal = addUtcDays(startLocal, block.durationWeeks * 7);
+    return { startLocal, blockStartWeek, endLocal };
   }
 
-  private toLocalDateOnly(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  }
-
-  private formatActivity(activity: {
-    id: string;
-    stravaId: bigint;
-    name: string | null;
-    distance: number | null;
-    elapsedTime: number | null;
-    averageHeartRate: number | null;
-    calories: number | null;
-    averageSpeed: number | null;
-    totalElevationGain: number | null;
-    startDateLocal: Date | null;
-  }): PlanActivityActual {
+  private formatActivity(
+    activity: {
+      id: string;
+      stravaId: bigint;
+      name: string | null;
+      distance: number | null;
+      elapsedTime: number | null;
+      averageHeartRate: number | null;
+      calories: number | null;
+      averageSpeed: number | null;
+      totalElevationGain: number | null;
+      startDateLocal: Date | null;
+    },
+    calendarDate?: Date,
+  ): PlanActivityActual {
+    const localDate = calendarDate ?? (activity.startDateLocal ? normalizeToUtcDateOnly(activity.startDateLocal) : null);
     return {
       id: activity.id,
       stravaId: activity.stravaId.toString(),
@@ -126,7 +131,7 @@ export class TrainingBlockPlanService {
       calories: activity.calories,
       averageSpeed: activity.averageSpeed,
       totalElevationGain: activity.totalElevationGain,
-      startDateLocal: activity.startDateLocal?.toISOString() ?? null,
+      startDateLocal: localDate?.toISOString() ?? null,
     };
   }
 
@@ -138,60 +143,57 @@ export class TrainingBlockPlanService {
     return Math.round((actual - plannedMiles) * 100) / 100;
   }
 
-  private getBlockWindow(block: { startDate: Date; durationWeeks: number }) {
-    const startDate = new Date(block.startDate);
-    const startLocal = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate());
-    startLocal.setHours(0, 0, 0, 0);
-    const blockStartWeek = this.getWeekStart(startLocal);
-    const endLocal = new Date(startLocal);
-    endLocal.setDate(endLocal.getDate() + block.durationWeeks * 7);
-    return { startLocal, blockStartWeek, endLocal };
-  }
-
   private getActivityWeekNumber(blockStartWeek: Date, activityLocal: Date, durationWeeks: number): number | null {
-    const diffDays = Math.floor((activityLocal.getTime() - blockStartWeek.getTime()) / MS_PER_DAY);
+    const diffDays = Math.floor(
+      (normalizeToUtcDateOnly(activityLocal).getTime() - blockStartWeek.getTime()) / MS_PER_DAY,
+    );
     if (diffDays < 0) return null;
     const weekNumber = Math.floor(diffDays / 7) + 1;
     if (weekNumber > durationWeeks) return null;
     return weekNumber;
   }
 
-  private getDaySortOrder(activityLocal: Date): number {
-    const day = activityLocal.getDay();
-    return day === 0 ? 6 : day - 1;
-  }
-
-  private buildActivityRow(activity: {
-    id: string;
-    stravaId: bigint;
-    name: string | null;
-    distance: number | null;
-    elapsedTime: number | null;
-    averageHeartRate: number | null;
-    calories: number | null;
-    averageSpeed: number | null;
-    totalElevationGain: number | null;
-    startDateLocal: Date | null;
-  }, weekNumber: number): PlanWorkoutRow {
-    const activityLocal = this.toLocalDateOnly(activity.startDateLocal!);
-    const sortOrder = this.getDaySortOrder(activityLocal);
+  private buildActivityRow(
+    activity: {
+      id: string;
+      stravaId: bigint;
+      name: string | null;
+      distance: number | null;
+      elapsedTime: number | null;
+      averageHeartRate: number | null;
+      calories: number | null;
+      averageSpeed: number | null;
+      totalElevationGain: number | null;
+      startDateLocal: Date | null;
+    },
+    weekNumber: number,
+    calendarDate: Date,
+  ): PlanWorkoutRow {
+    const sortOrder = getDaySortOrderUtc(calendarDate);
     return {
       id: `activity:${activity.id}`,
       weekNumber,
       dayCode: DAY_SLOTS[sortOrder].dayCode,
       sortOrder,
-      scheduledDate: activity.startDateLocal!.toISOString(),
+      scheduledDate: calendarDate.toISOString(),
       plannedMiles: null,
       workoutType: null,
-      actual: this.formatActivity(activity),
+      actual: this.formatActivity(activity, calendarDate),
       diffMiles: null,
     };
   }
 
   private sortWeekRows(rows: PlanWorkoutRow[]): PlanWorkoutRow[] {
-    return [...rows].sort(
-      (a, b) => a.sortOrder - b.sortOrder || a.scheduledDate.localeCompare(b.scheduledDate),
-    );
+    return [...rows].sort((a, b) => a.sortOrder - b.sortOrder || a.scheduledDate.localeCompare(b.scheduledDate));
+  }
+
+  private normalizeActivityCalendarDate(activity: { startDateLocal: Date | null }): Date | null {
+    if (!activity.startDateLocal) return null;
+    return normalizeToUtcDateOnly(activity.startDateLocal);
+  }
+
+  private scheduledDateForResponse(date: Date): string {
+    return normalizeToUtcDateOnly(date).toISOString();
   }
 
   private async ensureTrainingWeeks(trainingBlockId: string, durationWeeks: number): Promise<void> {
@@ -222,9 +224,7 @@ export class TrainingBlockPlanService {
     });
     if (existingCount > 0) return;
 
-    const startDate = new Date(block.startDate);
-    const startLocal = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate());
-    const blockStartWeek = this.getWeekStart(startLocal);
+    const { blockStartWeek } = this.getBlockWindow(block);
 
     const rows: {
       trainingBlockId: string;
@@ -236,8 +236,7 @@ export class TrainingBlockPlanService {
 
     for (let week = 0; week < block.durationWeeks; week++) {
       for (const slot of DAY_SLOTS) {
-        const scheduledDate = new Date(blockStartWeek);
-        scheduledDate.setDate(blockStartWeek.getDate() + week * 7 + slot.sortOrder);
+        const scheduledDate = addUtcDays(blockStartWeek, week * 7 + slot.sortOrder);
         rows.push({
           trainingBlockId,
           weekNumber: week + 1,
@@ -307,8 +306,9 @@ export class TrainingBlockPlanService {
 
     const activitiesByDate = new Map<string, (typeof activities)[0][]>();
     for (const activity of activities) {
-      if (!activity.startDateLocal) continue;
-      const key = this.toLocalDateOnly(activity.startDateLocal).toISOString();
+      const calendarDate = this.normalizeActivityCalendarDate(activity);
+      if (!calendarDate) continue;
+      const key = toDateKey(calendarDate);
       const list = activitiesByDate.get(key) ?? [];
       list.push(activity);
       activitiesByDate.set(key, list);
@@ -318,7 +318,7 @@ export class TrainingBlockPlanService {
     const matchedActivityIds = new Set<string>();
 
     for (const workout of plannedWorkouts) {
-      const scheduledKey = this.toLocalDateOnly(workout.scheduledDate).toISOString();
+      const scheduledKey = toDateKey(normalizeToUtcDateOnly(workout.scheduledDate));
       const dayActivities = activitiesByDate.get(scheduledKey) ?? [];
       const matched = dayActivities[0] ?? null;
 
@@ -326,7 +326,10 @@ export class TrainingBlockPlanService {
         matchedActivityIds.add(matched.id);
       }
 
-      const actual = matched ? this.formatActivity(matched) : null;
+      const calendarDate = normalizeToUtcDateOnly(workout.scheduledDate);
+      const actual = matched
+        ? this.formatActivity(matched, this.normalizeActivityCalendarDate(matched) ?? calendarDate)
+        : null;
       const diffMiles = this.computeDiffMiles(workout.plannedMiles, actual?.miles ?? null);
 
       const row: PlanWorkoutRow = {
@@ -334,7 +337,7 @@ export class TrainingBlockPlanService {
         weekNumber: workout.weekNumber,
         dayCode: workout.dayCode,
         sortOrder: workout.sortOrder,
-        scheduledDate: workout.scheduledDate.toISOString(),
+        scheduledDate: this.scheduledDateForResponse(workout.scheduledDate),
         plannedMiles: workout.plannedMiles,
         workoutType: workout.workoutType,
         actual,
@@ -349,11 +352,13 @@ export class TrainingBlockPlanService {
     for (const activity of activities) {
       if (!activity.startDateLocal || matchedActivityIds.has(activity.id)) continue;
 
-      const activityLocal = this.toLocalDateOnly(activity.startDateLocal);
-      const weekNumber = this.getActivityWeekNumber(blockStartWeek, activityLocal, block.durationWeeks);
+      const calendarDate = this.normalizeActivityCalendarDate(activity);
+      if (!calendarDate) continue;
+
+      const weekNumber = this.getActivityWeekNumber(blockStartWeek, calendarDate, block.durationWeeks);
       if (weekNumber === null) continue;
 
-      const row = this.buildActivityRow(activity, weekNumber);
+      const row = this.buildActivityRow(activity, weekNumber, calendarDate);
       const weekRows = weekMap.get(weekNumber) ?? [];
       weekRows.push(row);
       weekMap.set(weekNumber, weekRows);
@@ -465,7 +470,8 @@ export class TrainingBlockPlanService {
 
     const data: Record<string, unknown> = {};
     if (dto.scheduledDate !== undefined) {
-      data.scheduledDate = dto.scheduledDate instanceof Date ? dto.scheduledDate : new Date(dto.scheduledDate);
+      const parsed = dto.scheduledDate instanceof Date ? dto.scheduledDate : new Date(dto.scheduledDate);
+      data.scheduledDate = normalizeToUtcDateOnly(parsed);
     }
     if (dto.plannedMiles !== undefined) data.plannedMiles = dto.plannedMiles;
     if (dto.workoutType !== undefined) data.workoutType = this.resolveWorkoutType(dto.workoutType);
