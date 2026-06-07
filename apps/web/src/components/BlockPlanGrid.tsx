@@ -83,9 +83,8 @@ export function BlockPlanGrid({ week, blockId, locked, onPlanUpdated, onActivity
                     )
                   ) : (
                     <input
-                      type='number'
-                      step='0.01'
-                      min='0'
+                      type='text'
+                      inputMode='decimal'
                       defaultValue={row.plannedMiles ?? ''}
                       disabled={busy}
                       onKeyDown={blurOnEnter}

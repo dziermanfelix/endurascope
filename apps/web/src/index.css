@@ -1,19 +1,19 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 button {
   @apply cursor-pointer disabled:cursor-default;
 }
 
-/* Controlled by uiSettings.hideNumberInputSpinners — see config/ui.ts */
-@layer base {
-  :root[data-hide-number-spinners="true"] input[type="number"] {
-    -moz-appearance: textfield;
-    appearance: textfield;
-  }
+/* Override Tailwind preflight spin-button rules (::-webkit-*-spin-button { height: auto }) */
+input[type='number'] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
 
-  :root[data-hide-number-spinners="true"] input[type="number"]::-webkit-outer-spin-button,
-  :root[data-hide-number-spinners="true"] input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: none !important;
+  margin: 0 !important;
 }
