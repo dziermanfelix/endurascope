@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { TrainingBlock } from '../api/training-blocks';
-import { fetchTrainingBlockPlan, type TrainingBlockPlan } from '../api/plan';
+import { fetchTrainingBlockPlan, updateTrainingWeek, type TrainingBlockPlan } from '../api/plan';
 import { ActivityModal } from '../components/ActivityModal';
 import { BlockPlanGrid } from '../components/BlockPlanGrid';
 import { TrainingBlockNavigator } from '../components/TrainingBlockNavigator';
@@ -10,6 +10,7 @@ import { useActivities } from '../contexts/ActivitiesContext';
 import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockContext';
 import type { Activity } from '../types/activity';
 import { syncAndRenameForBlock } from '../util/blockActivitySync';
+import { blurOnEnter } from '../util/form';
 import { normalizePlanWeeks } from '../util/planWeeks';
 
 export function BlockPlan() {
@@ -99,11 +100,28 @@ export function BlockPlan() {
           )}
 
           {!isLoading && displayPlan && (
-            <BlockPlanGrid
-              plan={displayPlan}
-              onPlanUpdated={(updated) => setPlan(normalizePlanWeeks(updated))}
-              onActivityClick={handleActivityClick}
-            />
+            <div className='space-y-8'>
+              {displayPlan.weeks.map((week) => (
+                <section key={week.weekNumber}>
+                  <div className='mb-2 flex flex-wrap items-center gap-3'>
+                    <h3 className='font-semibold text-gray-900'>Week {week.weekNumber}</h3>
+                    <WeekStory
+                      week={week}
+                      blockId={displayPlan.block.id}
+                      locked={displayPlan.block.locked}
+                      onPlanUpdated={(updated) => setPlan(normalizePlanWeeks(updated))}
+                    />
+                  </div>
+                  <BlockPlanGrid
+                    week={week}
+                    blockId={displayPlan.block.id}
+                    locked={displayPlan.block.locked}
+                    onPlanUpdated={(updated) => setPlan(normalizePlanWeeks(updated))}
+                    onActivityClick={handleActivityClick}
+                  />
+                </section>
+              ))}
+            </div>
           )}
 
           <div className='mt-8 flex justify-end'>
@@ -123,5 +141,43 @@ export function BlockPlan() {
         <ActivityModal activity={selectedActivity} onClose={() => setSelectedActivity(null)} onUpdated={refreshPlan} />
       )}
     </div>
+  );
+}
+
+function WeekStory({
+  week,
+  blockId,
+  locked,
+  onPlanUpdated,
+}: {
+  week: TrainingBlockPlan['weeks'][number];
+  blockId: string;
+  locked: boolean;
+  onPlanUpdated: (plan: TrainingBlockPlan) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+
+  return (
+    <label className='flex min-w-[200px] flex-1 items-center gap-2'>
+      <span className='text-xs text-gray-500'>Story</span>
+      <input
+        type='text'
+        defaultValue={week.story ?? ''}
+        disabled={saving || locked}
+        readOnly={locked}
+        onKeyDown={blurOnEnter}
+        onBlur={async (e) => {
+          const v = e.target.value.trim() || null;
+          if (v === (week.story ?? null)) return;
+          setSaving(true);
+          try {
+            onPlanUpdated(await updateTrainingWeek(blockId, week.weekNumber, { story: v }));
+          } finally {
+            setSaving(false);
+          }
+        }}
+        className='flex-1 rounded border border-gray-200 px-2 py-1 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400'
+      />
+    </label>
   );
 }

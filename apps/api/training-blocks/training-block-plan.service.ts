@@ -6,6 +6,7 @@ import {
   getWeekStartUtc,
   normalizeToUtcDateOnly,
   toDateKey,
+  utcStartOfDay,
 } from '../common/local-date';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdatePlannedWorkoutDto, UpdateTrainingWeekDto } from './dto/plan.dto';
@@ -103,7 +104,13 @@ export class TrainingBlockPlanService {
     const startLocal = normalizeToUtcDateOnly(block.startDate);
     const blockStartWeek = getWeekStartUtc(startLocal);
     const endLocal = addUtcDays(startLocal, block.durationWeeks * 7);
-    return { startLocal, blockStartWeek, endLocal };
+    return {
+      startLocal,
+      blockStartWeek,
+      endLocal,
+      activityFrom: utcStartOfDay(blockStartWeek),
+      activityTo: utcStartOfDay(endLocal),
+    };
   }
 
   private formatActivity(
@@ -308,14 +315,14 @@ export class TrainingBlockPlanService {
       orderBy: [{ weekNumber: 'asc' }, { sortOrder: 'asc' }],
     });
 
-    const { startLocal, blockStartWeek, endLocal } = this.getBlockWindow(block);
+    const { blockStartWeek, activityFrom, activityTo } = this.getBlockWindow(block);
 
     const activities = await this.prisma.activity.findMany({
       where: {
         type: 'Run',
         startDateLocal: {
-          gte: startLocal,
-          lt: endLocal,
+          gte: activityFrom,
+          lt: activityTo,
         },
       },
       orderBy: { startDateLocal: 'asc' },

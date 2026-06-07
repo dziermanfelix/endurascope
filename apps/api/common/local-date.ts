@@ -26,6 +26,14 @@ export function normalizeToUtcDateOnly(date: Date): Date {
   return utcDateFromParts(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
 }
 
+/** UTC midnight for a calendar date — use for inclusive range lower bounds in DB queries. */
+export function utcStartOfDay(date: Date): Date {
+  const normalized = normalizeToUtcDateOnly(date);
+  return new Date(
+    Date.UTC(normalized.getUTCFullYear(), normalized.getUTCMonth(), normalized.getUTCDate(), 0, 0, 0, 0),
+  );
+}
+
 /** Monday-start week containing the given UTC calendar date. */
 export function getWeekStartUtc(date: Date): Date {
   const normalized = normalizeToUtcDateOnly(date);
