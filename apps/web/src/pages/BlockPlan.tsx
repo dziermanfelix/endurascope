@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TrainingBlock } from '../api/training-blocks';
 import { fetchTrainingBlockPlan, updateTrainingWeek, type TrainingBlockPlan } from '../api/plan';
 import { ActivityModal } from '../components/ActivityModal';
@@ -12,6 +12,7 @@ import type { Activity } from '../types/activity';
 import { syncAndRenameForBlock } from '../util/blockActivitySync';
 import { blurOnEnter } from '../util/form';
 import { normalizePlanWeeks } from '../util/planWeeks';
+import { getScrollToWeekNumber } from '../util/trainingBlock';
 
 export function BlockPlan() {
   const { selectedTrainingBlock } = useSelectedTrainingBlock();
@@ -20,6 +21,8 @@ export function BlockPlan() {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const currentWeekRef = useRef<HTMLElement | null>(null);
+  const scrolledToWeekForBlockRef = useRef<string | null>(null);
 
   const syncAndLoadPlan = useCallback(
     async (block: TrainingBlock) => {
@@ -51,10 +54,27 @@ export function BlockPlan() {
       setPlan(null);
       return;
     }
+    scrolledToWeekForBlockRef.current = null;
     syncAndLoadPlan(selectedTrainingBlock);
   }, [selectedTrainingBlock, syncAndLoadPlan]);
 
   const displayPlan = useMemo(() => (plan ? normalizePlanWeeks(plan) : null), [plan]);
+  const scrollToWeekNumber = useMemo(() => {
+    if (!displayPlan || !selectedTrainingBlock || displayPlan.block.id !== selectedTrainingBlock.id) {
+      return null;
+    }
+    return getScrollToWeekNumber(selectedTrainingBlock);
+  }, [displayPlan, selectedTrainingBlock]);
+
+  useEffect(() => {
+    if (!displayPlan || scrollToWeekNumber === null) return;
+    if (scrolledToWeekForBlockRef.current === displayPlan.block.id) return;
+
+    scrolledToWeekForBlockRef.current = displayPlan.block.id;
+    requestAnimationFrame(() => {
+      currentWeekRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [displayPlan, scrollToWeekNumber]);
 
   const handleActivityClick = (activityId: string) => {
     const activity = activities.find((a) => a.id === activityId);
@@ -102,7 +122,11 @@ export function BlockPlan() {
           {!isLoading && displayPlan && (
             <div className='space-y-8'>
               {displayPlan.weeks.map((week) => (
-                <section key={week.weekNumber}>
+                <section
+                  key={week.weekNumber}
+                  ref={week.weekNumber === scrollToWeekNumber ? currentWeekRef : undefined}
+                  className={week.weekNumber === scrollToWeekNumber ? 'scroll-mt-6' : undefined}
+                >
                   <div className='mb-2 flex flex-wrap items-center gap-3'>
                     <h3 className='font-semibold text-gray-900'>Week {week.weekNumber}</h3>
                     <WeekStory
