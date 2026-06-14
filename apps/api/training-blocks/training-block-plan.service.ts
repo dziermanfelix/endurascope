@@ -54,6 +54,7 @@ export interface PlanWorkoutRow {
 export interface PlanWeekSummary {
   weekNumber: number;
   plannedRuns: number;
+  actualRuns: number;
   plannedMiles: number;
   actualMiles: number;
   totalElapsedTime: number;
@@ -436,6 +437,7 @@ export class TrainingBlockPlanService {
 
   private computeWeekSummary(weekNumber: number, rows: PlanWorkoutRow[]): PlanWeekSummary {
     let plannedRuns = 0;
+    let actualRuns = 0;
     let plannedMiles = 0;
     let actualMiles = 0;
     let totalElapsedTime = 0;
@@ -449,6 +451,9 @@ export class TrainingBlockPlanService {
       if (row.plannedMiles !== null && row.plannedMiles > 0) {
         plannedRuns += 1;
         plannedMiles += row.plannedMiles;
+      }
+      if (row.actual) {
+        actualRuns += 1;
       }
       if (row.actual?.miles) {
         actualMiles += row.actual.miles;
@@ -474,6 +479,7 @@ export class TrainingBlockPlanService {
     return {
       weekNumber,
       plannedRuns,
+      actualRuns,
       plannedMiles: Math.round(plannedMiles * 100) / 100,
       actualMiles: Math.round(actualMiles * 100) / 100,
       totalElapsedTime,

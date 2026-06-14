@@ -3,6 +3,7 @@ import type { TrainingBlock } from '../api/training-blocks';
 import { fetchTrainingBlockPlan, updateTrainingWeek, type TrainingBlockPlan } from '../api/plan';
 import { ActivityModal } from '../components/ActivityModal';
 import { BlockPlanGrid } from '../components/BlockPlanGrid';
+import { BlockPlanSummary } from '../components/BlockPlanSummary';
 import { TrainingBlockNavigator } from '../components/TrainingBlockNavigator';
 import LockIcon from '../icons/LockIcon';
 import LoadingIcon from '../icons/LoadingIcon';
@@ -11,6 +12,7 @@ import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockConte
 import type { Activity } from '../types/activity';
 import { syncAndRenameForBlock } from '../util/blockActivitySync';
 import { blurOnEnter } from '../util/form';
+import { aggregatePlanSummaries } from '../util/planSummary';
 import { normalizePlanWeeks } from '../util/planWeeks';
 import { getScrollToWeekNumber } from '../util/trainingBlock';
 
@@ -59,6 +61,10 @@ export function BlockPlan() {
   }, [selectedTrainingBlock, syncAndLoadPlan]);
 
   const displayPlan = useMemo(() => (plan ? normalizePlanWeeks(plan) : null), [plan]);
+  const blockSummary = useMemo(
+    () => (displayPlan ? aggregatePlanSummaries(displayPlan.weeks.map((week) => week.summary)) : null),
+    [displayPlan],
+  );
   const scrollToWeekNumber = useMemo(() => {
     if (!displayPlan || !selectedTrainingBlock || displayPlan.block.id !== selectedTrainingBlock.id) {
       return null;
@@ -145,6 +151,10 @@ export function BlockPlan() {
                   />
                 </section>
               ))}
+
+              {blockSummary && (
+                <BlockPlanSummary summary={blockSummary} weekCount={displayPlan.weeks.length} />
+              )}
             </div>
           )}
 

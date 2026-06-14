@@ -155,7 +155,12 @@ export function BlockPlanGrid({ week, blockId, locked, onPlanUpdated, onActivity
             <td colSpan={2} className={`${td} ${sum} text-gray-500`}>
               {week.summary.plannedRuns} planned runs
             </td>
-            <td className={`${tdR} border-l border-gray-200 ${sum}`}>{week.summary.actualMiles.toFixed(2)}</td>
+            <td className={`${tdR} border-l border-gray-200 ${sum}`}>
+              <div>{week.summary.actualMiles.toFixed(2)}</div>
+              <div className='font-normal text-gray-500'>
+                {week.summary.actualRuns ?? 0} {(week.summary.actualRuns ?? 0) === 1 ? 'run' : 'runs'}
+              </div>
+            </td>
             <td className={`${tdR} ${sum}`}>{averagePaceFromSummary(week.summary)}</td>
             <td className={`${tdR} ${sum}`}>{elapsedTimeFromSummary(week.summary)}</td>
             <td className={`${tdR} ${sum}`}>{averageHeartRateFromSummary(week.summary)}</td>

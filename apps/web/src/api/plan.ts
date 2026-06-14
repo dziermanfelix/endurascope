@@ -30,6 +30,7 @@ export interface PlanWorkoutRow {
 export interface PlanWeekSummary {
   weekNumber: number;
   plannedRuns: number;
+  actualRuns: number;
   plannedMiles: number;
   actualMiles: number;
   totalElapsedTime: number;

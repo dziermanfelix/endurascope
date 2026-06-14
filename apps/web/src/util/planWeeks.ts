@@ -4,6 +4,7 @@ function emptyWeekSummary(weekNumber: number): PlanWeekSummary {
   return {
     weekNumber,
     plannedRuns: 0,
+    actualRuns: 0,
     plannedMiles: 0,
     actualMiles: 0,
     totalElapsedTime: 0,
