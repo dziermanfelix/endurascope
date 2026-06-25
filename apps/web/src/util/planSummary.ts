@@ -1,5 +1,13 @@
 import type { PlanWeekSummary } from '../api/plan';
 
+export function filterSummariesThroughWeek(
+  summaries: PlanWeekSummary[],
+  throughWeek: number | null,
+): PlanWeekSummary[] {
+  if (throughWeek === null) return [];
+  return summaries.filter((summary) => summary.weekNumber <= throughWeek);
+}
+
 export function aggregatePlanSummaries(summaries: PlanWeekSummary[]): PlanWeekSummary {
   const aggregated = summaries.reduce(
     (acc, summary) => ({

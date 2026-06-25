@@ -12,9 +12,9 @@ import { useSelectedTrainingBlock } from '../contexts/SelectedTrainingBlockConte
 import type { Activity } from '../types/activity';
 import { syncAndRenameForBlock } from '../util/blockActivitySync';
 import { blurOnEnter } from '../util/form';
-import { aggregatePlanSummaries } from '../util/planSummary';
+import { aggregatePlanSummaries, filterSummariesThroughWeek } from '../util/planSummary';
 import { normalizePlanWeeks } from '../util/planWeeks';
-import { getScrollToWeekNumber } from '../util/trainingBlock';
+import { getCurrentWeekNumber, getScrollToWeekNumber } from '../util/trainingBlock';
 
 export function BlockPlan() {
   const { selectedTrainingBlock } = useSelectedTrainingBlock();
@@ -61,10 +61,21 @@ export function BlockPlan() {
   }, [selectedTrainingBlock, syncAndLoadPlan]);
 
   const displayPlan = useMemo(() => (plan ? normalizePlanWeeks(plan) : null), [plan]);
-  const blockSummary = useMemo(
-    () => (displayPlan ? aggregatePlanSummaries(displayPlan.weeks.map((week) => week.summary)) : null),
-    [displayPlan],
+  const summaryThroughWeek = useMemo(
+    () => (selectedTrainingBlock ? getCurrentWeekNumber(selectedTrainingBlock) : null),
+    [selectedTrainingBlock],
   );
+  const blockSummary = useMemo(() => {
+    if (!displayPlan || summaryThroughWeek === null) return null;
+
+    const summaries = filterSummariesThroughWeek(
+      displayPlan.weeks.map((week) => week.summary),
+      summaryThroughWeek,
+    );
+    if (summaries.length === 0) return null;
+
+    return aggregatePlanSummaries(summaries);
+  }, [displayPlan, summaryThroughWeek]);
   const scrollToWeekNumber = useMemo(() => {
     if (!displayPlan || !selectedTrainingBlock || displayPlan.block.id !== selectedTrainingBlock.id) {
       return null;
@@ -152,8 +163,13 @@ export function BlockPlan() {
                 </section>
               ))}
 
-              {blockSummary && (
-                <BlockPlanSummary summary={blockSummary} weekCount={displayPlan.weeks.length} />
+              {blockSummary && summaryThroughWeek !== null && (
+                <BlockPlanSummary
+                  summary={blockSummary}
+                  weekCount={summaryThroughWeek}
+                  throughWeekNumber={summaryThroughWeek}
+                  totalWeeks={displayPlan.weeks.length}
+                />
               )}
             </div>
           )}

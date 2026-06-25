@@ -10,6 +10,8 @@ import { averagePerWeek, formatRunsDiff, plannedVsActualMilesDiff, plannedVsActu
 interface BlockPlanSummaryProps {
   summary: PlanWeekSummary;
   weekCount: number;
+  throughWeekNumber: number;
+  totalWeeks: number;
 }
 
 const th = 'px-2 py-2 text-xs font-medium text-gray-500 border-b border-gray-200 whitespace-nowrap';
@@ -22,16 +24,19 @@ function diffClass(diff: number | null | undefined) {
   return diff < 0 ? 'text-red-600' : 'text-green-600';
 }
 
-export function BlockPlanSummary({ summary, weekCount }: BlockPlanSummaryProps) {
+export function BlockPlanSummary({ summary, weekCount, throughWeekNumber, totalWeeks }: BlockPlanSummaryProps) {
   const avgPlannedMilesPerWeek = averagePerWeek(summary.plannedMiles, weekCount);
   const avgActualMilesPerWeek = averagePerWeek(summary.actualMiles, weekCount);
   const avgActualRunsPerWeek = averagePerWeek(summary.actualRuns ?? 0, weekCount);
   const diffMiles = plannedVsActualMilesDiff(summary);
   const diffRuns = plannedVsActualRunsDiff(summary);
+  const partialBlock = throughWeekNumber < totalWeeks;
+  const weekRangeLabel =
+    throughWeekNumber === 1 ? 'Week 1' : partialBlock ? `Weeks 1–${throughWeekNumber}` : `${weekCount} weeks`;
 
   return (
     <section>
-      <h3 className='mb-2 font-semibold text-gray-900'>Block Summary</h3>
+      <h3 className='mb-2 font-semibold text-gray-900'>Progress Summary</h3>
       <div className='overflow-x-auto rounded-lg border border-gray-300 bg-white shadow-sm'>
         <table className='w-full min-w-[900px] border-collapse text-sm'>
           <thead className='bg-gray-50'>
@@ -53,7 +58,8 @@ export function BlockPlanSummary({ summary, weekCount }: BlockPlanSummaryProps) 
           <tbody>
             <tr className='bg-orange-50 font-medium'>
               <td colSpan={2} className={`${td} ${sum}`}>
-                {weekCount} {weekCount === 1 ? 'week' : 'weeks'}
+                <div>{weekRangeLabel}</div>
+                {partialBlock && <div className='font-normal text-gray-500'>of {totalWeeks} total</div>}
               </td>
               <td className={`${tdR} ${sum}`}>
                 <div>{summary.plannedMiles.toFixed(2)}</div>

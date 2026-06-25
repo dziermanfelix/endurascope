@@ -114,7 +114,10 @@ export const ActivityModal = ({ activity, onClose, onUpdated }: ActivityModalPro
       panelClassName='bg-white relative rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'
     >
       {/* Header */}
-      <div className='sticky top-0 flex items-start justify-between rounded-xl p-3' onClick={handleNameClick}>
+      <div
+        className='sticky top-0 z-10 flex items-start justify-between rounded-t-xl bg-white p-3 border-b border-gray-200'
+        onClick={handleNameClick}
+      >
         <div className='flex-1'>
           {activity.startDateLocal && (
             <div className='text-sm text-gray-500 mb-2'>{formatDate(activity.startDateLocal)}</div>
