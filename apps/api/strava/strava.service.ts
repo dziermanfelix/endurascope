@@ -196,19 +196,47 @@ export class StravaService {
     return activities;
   }
 
+  private formatStravaApiError(error: any): string {
+    const data = error.response?.data;
+    const inactiveApp = data?.errors?.find(
+      (e: { field?: string; code?: string; resource?: string }) =>
+        e.resource === 'Application' && e.field === 'Status' && e.code === 'Inactive',
+    );
+    if (inactiveApp) {
+      return (
+        'Your Strava API application is inactive. Open https://www.strava.com/settings/api to check app status ' +
+        'and ensure your Strava account has an active subscription.'
+      );
+    }
+
+    if (data?.errors?.length) {
+      const details = data.errors
+        .map((e: { resource?: string; field?: string; code?: string }) =>
+          [e.resource, e.field, e.code].filter(Boolean).join('.'),
+        )
+        .join(', ');
+      return `${data.message || 'Strava API error'} (${details})`;
+    }
+
+    return error instanceof Error ? error.message : 'Unknown error';
+  }
+
+  private isMissingActivityReadPermission(error: any): boolean {
+    const errors = error.response?.data?.errors || [];
+    return errors.some(
+      (e: { field?: string; code?: string; resource?: string }) =>
+        e.field === 'activity:read_permission' && e.code === 'missing' && e.resource === 'AccessToken',
+    );
+  }
+
   private async getAthleteActivities(params: Record<string, number>): Promise<StravaActivity[]> {
     try {
       const response = await this.apiClient.get<StravaActivity[]>('/athlete/activities', { params });
       return response.data ?? [];
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        const errors = error.response?.data?.errors || [];
-        const missingPermission = errors.find(
-          (e: { field?: string; code?: string; resource?: string }) =>
-            e.field === 'activity:read_permission' && e.code === 'missing' && e.resource === 'AccessToken',
-        );
-
-        if (missingPermission) {
+      const status = error.response?.status;
+      if (status === 401 || (status === 403 && this.isMissingActivityReadPermission(error))) {
+        if (this.isMissingActivityReadPermission(error)) {
           if (!this.oauthService) {
             throw new Error(
               'Token missing required permissions. Please re-authorize your application with the scope activity:read_all.',
@@ -222,8 +250,7 @@ export class StravaService {
         return retryResponse.data ?? [];
       }
 
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to fetch activities: ${errorMessage}`);
+      throw new Error(`Failed to fetch activities: ${this.formatStravaApiError(error)}`);
     }
   }
 
